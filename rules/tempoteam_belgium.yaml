@@ -1,0 +1,166 @@
+﻿# TEMPOTEAM 比利时 核算规则配置
+# 国家: 比利时 | 供应商: TEMPOTEAM | 币种: EUR
+# 每个供应商/国家一个独立 YAML 文件，方便扩展
+supplier:
+  name: "TEMPOTEAM"
+  country: "比利时"
+  currency: "EUR"
+  vat_rate: 0.21  # 比利时标准 VAT 21%
+
+# ===== 考勤表格式定义 =====
+attendance:
+  file_type: "xlsx"
+  sheet_name: "Juin 2026"  # 月份作为 sheet 名
+  header_rows:
+    date_row: 2      # Col2~8 是日期数字
+    weekday_row: 1   # Col1 是 "JUIN", Col2~8 是星期
+  columns:
+    name_col: 1      # Col1 = 员工姓名（含角色备注）
+    mon_col: 2       # 周一到周日
+    tue_col: 3
+    wed_col: 4
+    thu_col: 5
+    fri_col: 6
+    sat_col: 7
+    sun_col: 8
+  time_pattern:
+    # 时间格式: "6h-14h06" → 6:00到14:06，工作8小时6分钟
+    regex: "(\\d+)h(\\d*)\\s*-\\s*(\\d+)h(\\d*)"
+    off_markers: ["OFF", "ABSENT"]
+
+# ===== 角色与单价映射 =====
+roles:
+  - name: "Conducteur de chariot élévateur à fourche"
+    aliases: ["Cariste", "CARISTE", "Conducteur de chariot élévateur"]
+    base_rate: 28.00
+    unit: "hour"
+    
+  - name: "Manoeuvre"
+    aliases: ["Manoeuvre", "WH", "Stack", "STACK", "stack TEMPO"]
+    base_rate: 26.76
+    unit: "hour"
+    
+  - name: "Déclarant en douane"
+    aliases: ["Douane", "douane", "dispatch", "étudiant - dispatch"]
+    base_rate: 35.48
+    unit: "hour"
+    
+  - name: "Étudiant"
+    aliases: ["TT", "étudiante", "étudiant", "Retour"]
+    base_rate: 20.18  # 学生工资较低
+    unit: "hour"
+
+# ===== 费用行项目定义 =====
+# 定义发票中的每行费用对应关系和计算规则
+line_items:
+  # === 基础服务费 ===
+  - name: "Prestations"
+    invoice_labels: ["Prestations", "Prestations - Fonction:"]
+    category: "base_service"
+    calculation: "hours × base_rate"
+    vat_code: "A"  # 21%
+    
+  # === 团队补贴 ===
+  - name: "Supplément équipe"
+    invoice_labels: ["Supplément équipe", "Supplément équipe - Fonction:"]
+    category: "supplement"
+    calculation: "hours × base_rate × 7.5%"
+    percentage: 7.5
+    vat_code: "A"
+    
+  # === 加班费 ===
+  - name: "Hrs supplém. payées immédiatement"
+    invoice_labels: ["Hrs supplém. payées immédiatement"]
+    category: "overtime"
+    calculation: "overtime_hours × base_rate"
+    vat_code: "A"
+    
+  - name: "Supplément hrs supp."
+    invoice_labels: ["Supplément hrs supp."]
+    category: "overtime_supplement"
+    calculation: "overtime_hours × base_rate × 50%"
+    percentage: 50
+    vat_code: "A"
+    
+  # === 周末/假日补贴 ===
+  - name: "Supplément weekend/jour férié"
+    invoice_labels: ["Supplément weekend/jour férié"]
+    category: "weekend_supplement"
+    vat_code: "A"
+    
+  # === 养老金 ===
+  - name: "Prime de pension"
+    invoice_labels: ["Prime de pension", "Prime de pension - Fonction:"]
+    category: "pension"
+    calculation: "days × daily_rate"
+    unit: "day"
+    vat_code: "A"
+    
+  # === 通勤补贴 ===
+  - name: "Frais domicile-travail"
+    invoice_labels: ["Frais domicile-travail", "Frais domicile-travail - Fonction:"]
+    category: "travel"
+    calculation: "days × daily_rate"
+    unit: "day"
+    vat_code: "A"
+    
+  # === 餐券 ===
+  - name: "Chèques repas"
+    invoice_labels: ["Chèques repas", "Chèques repas - Fonction:"]
+    category: "meal_voucher"
+    default_rate: 8.87
+    calculation: "days × 8.87"
+    unit: "day"
+    vat_code: "A"
+    
+  # === 生态券（报关员专属） ===
+  - name: "Eco-chèques"
+    invoice_labels: ["Eco-chèques"]
+    category: "eco_voucher"
+    default_rate: 10.37
+    vat_code: "A"
+    
+  # === 社保申报费 ===
+  - name: "Dimona"
+    invoice_labels: ["Dimona", "Dimona - Fonction:"]
+    category: "social_security"
+    calculation: "hours × 0.35"
+    default_rate: 0.35
+    unit: "hour"
+    vat_code: "A"
+    
+  # === 学生管理附加费 ===
+  - name: "Surcharge frais admin. étudiant"
+    invoice_labels: ["Surcharge frais admin. étudiant"]
+    category: "student_admin_fee"
+    default_rate: 0.42
+    calculation: "hours × 0.42"
+    unit: "hour"
+    vat_code: "A"
+    
+  # === 学生管理费 ===
+  - name: "Frais de gestion étudiant"
+    invoice_labels: ["Frais de gestion étudiant"]
+    category: "student_management_fee"
+    default_rate: 2.00
+    calculation: "hours × 2.00"
+    unit: "hour"
+    vat_code: "A"
+
+# ===== 匹配规则 =====
+# 定义如何判断一张发票属于哪个组、对象是谁
+invoice_grouping:
+  - name: "Transfert"
+    description: "仓库工人主发票"
+    label_in_invoice: "Transfert"
+    
+  - name: "Customs"
+    description: "报关员发票"
+    # 无特殊标签，通过检查员工角色判断
+
+# ===== 对账规则 =====
+reconciliation:
+  tolerance_percent: 1.0  # 1% 以内的差异视为正常（舍入误差）
+  auto_approve_threshold: 5.0  # 5% 以内自动通过
+  manual_review_threshold: 5.0  # 超过 5% 标记人工复核
+  require_hour_match: true  # 考勤工时和发票工时必须匹配
