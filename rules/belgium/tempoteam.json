@@ -1,0 +1,60 @@
+{
+  "country": "belgium",
+  "supplier": "TEMPOTEAM",
+  "label": "比利时 - TEMPOTEAM",
+  "rules": {
+    "lunch_deduction": {
+      "label": "午餐扣减",
+      "enabled": true,
+      "description": "每班次>=6h扣减0.5h午休",
+      "max_daily_diff": 0.5,
+      "per_period": true
+    },
+    "supplement_equipe": {
+      "label": "班次补贴",
+      "enabled": true,
+      "description": "6h-14h/11h-19h/14h-22h班次补贴7.5%",
+      "rate_pct": 7.5,
+      "qualifying_start_hours": [
+        6,
+        11,
+        14
+      ]
+    },
+    "dimona_social_security": {
+      "label": "社保申报",
+      "enabled": true,
+      "description": "按出勤日缴纳社保",
+      "verify_qty": true,
+      "tolerance": 0.5
+    },
+    "name_matching": {
+      "label": "姓名匹配",
+      "threshold": 0.35,
+      "auto_approve_unmatched_hours": 0.5,
+      "flag_unmatched": true
+    }
+  },
+  "item_classification": {
+    "work_hours_items": [
+      "Prestations",
+      "Hrs supplém. payées immédiatement"
+    ],
+    "supplement_items": [
+      "Supplément équipe",
+      "Supplément weekend/jour férié",
+      "Supplément hrs supp."
+    ],
+    "social_items": [
+      "Dimona"
+    ],
+    "ignore_items": [
+      "Prime de pension",
+      "Frais domicile-travail",
+      "Chèques repas",
+      "Eco-chèques",
+      "Surcharge frais admin. étudiant",
+      "Frais de gestion étudiant"
+    ]
+  }
+}
