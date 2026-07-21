@@ -292,6 +292,7 @@ def api_reconcile():
             "total_att": round(report.total_attendance_hours, 2),
             "total_inv": round(report.total_invoice_hours, 2),
             "total_amt": round(report.total_invoice_amount, 2),
+            "total_night_hours": round(sum(r.get("night_hours", 0) for r in att_data.get("records", [])), 2),
             "employees": len(report.results),
             "results": results,
             "unmatched_att": report.unmatched_attendance,

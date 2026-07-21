@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>·¢Æ±¹¤Ê± Recon System</title>
+<title>å‘ç¥¨å·¥æ—¶ Recon System</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0a0e1a;--bg2:#111827;--card:#1a1f35;--border:#2a3050;--primary:#00d4ff;--primary-dim:rgba(0,212,255,0.15);--accent:#7c3aed;--success:#10b981;--warn:#f59e0b;--danger:#ef4444;--text:#e2e8f0;--text2:#94a3b8;--font:'Segoe UI',system-ui,sans-serif}
@@ -100,95 +100,96 @@ tr:hover td{background:rgba(0,212,255,0.02)}
 
 <div class="app">
 <header class="header">
-<div><h1>·¢Æ±ºË¶ÔÏµÍ³</h1></div>
-<span style="padding:6px 14px;border-radius:20px;font-size:12px;background:var(--primary-dim);color:var(--primary);border:1px solid rgba(0,212,255,0.2)" id="statusBadge">ÏµÍ³¾ÍĞ÷</span>
+<h1>&#128202; å‘ç¥¨å·¥æ—¶æ ¸å¯¹ç³»ç»Ÿ</h1>
+<span style="padding:6px 14px;border-radius:20px;font-size:12px;background:var(--primary-dim);color:var(--primary);border:1px solid rgba(0,212,255,0.2)" id="statusBadge">ç³»ç»Ÿå°±ç»ª</span>
 </header>
 
 <div class="steps-nav" id="stepsNav">
-<button onclick="navToStep(this)" class="step-btn active" data-step="0"><span class="step-num">1</span><span class="step-check">&#10003;</span> Ñ¡Ôñ¹©Ó¦ÉÌ</button>
-<button onclick="navToStep(this)" class="step-btn" data-step="1"><span class="step-num">2</span><span class="step-check">&#10003;</span> ÉÏ´«¿¼ÇÚ</button>
-<button onclick="navToStep(this)" class="step-btn" data-step="2"><span class="step-num">3</span><span class="step-check">&#10003;</span> ²é¿´Êı¾İ</button>
-<button onclick="navToStep(this)" class="step-btn" data-step="3"><span class="step-num">4</span><span class="step-check">&#10003;</span> ÉÏ´«·¢Æ±</button>
-<button onclick="navToStep(this)" class="step-btn" data-step="4"><span class="step-num">5</span><span class="step-check">&#10003;</span> Ö´ĞĞºË¶Ô</button>
-<button onclick="navToStep(this)" class="step-btn" data-step="5"><span class="step-num">6</span><span class="step-check">&#10003;</span> ºË¶Ô½á¹û</button>
+<button onclick="navToStep(this)" class="step-btn active" data-step="0"><span class="step-num">1</span><span class="step-check">&#10003;</span> é€‰æ‹©ä¾›åº”å•†</button>
+<button onclick="navToStep(this)" class="step-btn" data-step="1"><span class="step-num">2</span><span class="step-check">&#10003;</span> ä¸Šä¼ è€ƒå‹¤</button>
+<button onclick="navToStep(this)" class="step-btn" data-step="2"><span class="step-num">3</span><span class="step-check">&#10003;</span> è€ƒå‹¤æ¦‚è§ˆ</button>
+<button onclick="navToStep(this)" class="step-btn" data-step="3"><span class="step-num">4</span><span class="step-check">&#10003;</span> ä¸Šä¼ å‘ç¥¨</button>
+<button onclick="navToStep(this)" class="step-btn" data-step="4"><span class="step-num">5</span><span class="step-check">&#10003;</span> æ‰§è¡Œæ ¸å¯¹</button>
+<button onclick="navToStep(this)" class="step-btn" data-step="5"><span class="step-num">6</span><span class="step-check">&#10003;</span> æ ¸å¯¹ç»“æœ</button>
 </div>
+<div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
 <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
 
 <div class="panel active" id="panel0">
 <div class="card">
-<div class="card-title"><span class="icon blue">&#9881;</span> Ñ¡Ôñ¹ú¼ÒÓë¹©Ó¦ÉÌ</div>
+<div class="card-title"><span class="icon blue">&#9881;</span> é€‰æ‹©å›½å®¶ä¸ä¾›åº”å•†</div>
 <div class="form-row">
-<div class="form-group"><label>¹ú¼Ò</label><select id="selCountry">{% for s in suppliers %}<option value="{{ s.country }}">{{ s.country|capitalize }}</option>{% endfor %}</select></div>
-<div class="form-group"><label>¹©Ó¦ÉÌ</label><select id="selSupplier">{% for s in suppliers %}<option value="{{ s.supplier }}" data-country="{{ s.country }}">{{ s.supplier }}</option>{% endfor %}</select></div>
+<div class="form-group"><label>å›½å®¶</label><select id="selCountry">{% for s in suppliers %}<option value="{{ s.country }}">{{ s.country|capitalize }}</option>{% endfor %}</select></div>
+<div class="form-group"><label>ä¾›åº”å•†</label><select id="selSupplier">{% for s in suppliers %}<option value="{{ s.supplier }}" data-country="{{ s.country }}">{{ s.supplier }}</option>{% endfor %}</select></div>
 </div>
 <div style="margin-top:20px;display:flex;gap:12px">
-<button class="btn btn-primary" onclick="goStep(1)">ÏÂÒ»²½ &#8594;</button>
-<button class="btn btn-outline" onclick="openRules()">&#9998; ±à¼­¹æÔò</button>
+<button class="btn btn-primary" onclick="goStep(1)">ä¸‹ä¸€æ­¥ &#8594;</button>
+<button class="btn btn-outline" onclick="openRules()">&#9998; ç¼–è¾‘è§„åˆ™</button>
 </div></div></div>
 
 <div class="panel" id="panel1">
 <div class="card">
-<div class="card-title"><span class="icon blue">&#128196;</span> ÉÏ´«¿¼ÇÚ Sheet</div>
+<div class="card-title"><span class="icon blue">&#128196;</span> ä¸Šä¼ è€ƒå‹¤ Sheet</div>
 <div class="upload-zone" id="attZone">
 <input type="file" id="attFile" accept=".xlsx">
 <div style="font-size:40px;margin-bottom:12px">&#128196;</div>
-<div>ÍÏ·ÅExcelÎÄ¼şµ½´Ë´¦£¬»ò<strong style="color:var(--primary)">ä¯ÀÀÑ¡Ôñ</strong></div>
+<div>æ‹–æ”¾Excelæ–‡ä»¶åˆ°æ­¤å¤„ï¼Œæˆ–<strong style="color:var(--primary)">ç‚¹å‡»é€‰æ‹©</strong></div>
 <div class="file-info" id="attFileInfo" style="margin-top:12px;display:none"></div>
 </div>
-<div class="loading" id="attLoading"><div class="spinner"></div><span>½âÎöÖĞ...</span></div>
+<div class="loading" id="attLoading"><div class="spinner"></div><span>è§£æä¸­...</span></div>
 <div style="margin-top:20px;display:flex;gap:12px">
-<button class="btn btn-outline" onclick="goStep(0)">&#8592; ·µ»Ø</button>
-<button class="btn btn-primary" id="btnParseAtt" onclick="parse¿¼ÇÚ¹¤Ê±()">½âÎö¿¼ÇÚÊı¾İ</button>
+<button class="btn btn-outline" onclick="goStep(0)">&#8592; è¿”å›</button>
+<button class="btn btn-primary" id="btnParseAtt" onclick="parseAttendance()">è§£æè€ƒå‹¤æ•°æ®</button>
 </div></div></div>
 
 <div class="panel" id="panel2">
 <div class="card">
-<div class="card-title"><span class="icon green">&#128200;</span> ¿¼ÇÚÊı¾İ¸ÅÀÀ</div>
+<div class="card-title"><span class="icon green">&#128200;</span> è€ƒå‹¤æ•°æ®æ¦‚è§ˆ</div>
 <div class="stats-grid" id="attStats"></div>
-<div class="table-wrap"><table><thead><tr><th>Ô±¹¤ĞÕÃû</th><th>¹¤Ê±</th><th>Ò¹°à</th><th>ÌìÊı</th><th>°à´Î</th></tr></thead><tbody id="attTable"></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>å‘˜å·¥å§“å</th><th>å·¥æ—¶</th><th>å¤œç­</th><th>å¤©æ•°</th><th>ç­æ¬¡</th></tr></thead><tbody id="attTable"></tbody></table></div>
 <div style="margin-top:20px;display:flex;gap:12px">
-<button class="btn btn-outline" onclick="goStep(1)">&#8592; ·µ»Ø</button>
-<button class="btn btn-primary" onclick="goStep(3)">ÏÂÒ»²½ &#8594;</button>
+<button class="btn btn-outline" onclick="goStep(1)">&#8592; è¿”å›</button>
+<button class="btn btn-primary" onclick="goStep(3)">ä¸‹ä¸€æ­¥ &#8594;</button>
 </div>
 </div></div>
 
 <div class="panel" id="panel3">
 <div class="card">
-<div class="card-title"><span class="icon purple">&#128203;</span> ÉÏ´«·¢Æ±PDF</div>
+<div class="card-title"><span class="icon purple">&#128203;</span> ä¸Šä¼ å‘ç¥¨PDF</div>
 <div class="upload-zone" id="invZone">
 <input type="file" id="invFiles" accept=".pdf" multiple>
 <div style="font-size:40px;margin-bottom:12px">&#128203;</div>
-<div>ÍÏ·ÅPDFÎÄ¼şµ½´Ë´¦£¬»ò<strong style="color:var(--primary)">ä¯ÀÀÑ¡Ôñ</strong>£¨¿É¶àÑ¡£©</div>
+<div>æ‹–æ”¾PDFæ–‡ä»¶åˆ°æ­¤å¤„ï¼Œæˆ–<strong style="color:var(--primary)">æµè§ˆé€‰æ‹©</strong>ï¼ˆå¯å¤šé€‰ï¼‰</div>
 <div class="file-info" id="invFileInfo" style="margin-top:12px;display:none"></div>
 </div>
-<div class="loading" id="invLoading"><div class="spinner"></div><span>½âÎöÖĞ...</span></div>
+<div class="loading" id="invLoading"><div class="spinner"></div><span>è§£æä¸­...</span></div>
 <div style="margin-top:20px;display:flex;gap:12px">
-<button class="btn btn-outline" onclick="goStep(2)">&#8592; ·µ»Ø</button>
-<button class="btn btn-primary" id="btnParseInv" onclick="parse·¢Æ±¹¤Ê±s()">½âÎö·¢Æ±Êı¾İ</button>
+<button class="btn btn-outline" onclick="goStep(2)">&#8592; è¿”å›</button>
+<button class="btn btn-primary" id="btnParseInv" onclick="parseInvoices()">è§£æå‘ç¥¨æ•°æ®</button>
 </div></div></div>
 
 <div class="panel" id="panel4">
 <div class="card">
-<div class="card-title"><span class="icon amber">&#9889;</span> Ready to Ö´ĞĞºË¶Ô</div>
+<div class="card-title"><span class="icon amber">&#9889;</span> Ready to æ‰§è¡Œæ ¸å¯¹</div>
 <div class="stats-grid" id="reconPreview"></div>
 <div style="margin-top:20px;display:flex;gap:12px;justify-content:space-between">
-<button class="btn btn-outline" onclick="goStep(3)">&#8592; ·µ»Ø</button>
-<button class="btn btn-accent" onclick="runRecon()" style="font-size:18px;padding:16px 48px">&#9889; ¿ªÊ¼ºË¶Ô</button>
+<button class="btn btn-outline" onclick="goStep(3)">&#8592; è¿”å›</button>
+<button class="btn btn-accent" onclick="runRecon()" style="font-size:18px;padding:16px 48px">&#9889; å¼€å§‹æ ¸å¯¹</button>
 </div>
 <div class="loading" id="reconLoading"><div class="spinner"></div><span>Reconciling...</span></div>
 </div></div>
 
 <div class="panel" id="panel5">
 <div class="card">
-<div class="card-title"><span class="icon green">&#9989;</span> ºË¶Ô½á¹û</div>
+<div class="card-title"><span class="icon green">&#9989;</span> æ ¸å¯¹ç»“æœ</div>
 <div class="stats-grid" id="resultStats"></div>
-<div class="table-wrap"><table><thead><tr><th>Ô±¹¤ĞÕÃû</th><th>¿¼ÇÚ¹¤Ê±</th><th>·¢Æ±¹¤Ê±</th><th>²îÒì</th><th>ÅĞ¶¨</th><th>°à´Î²¹Ìù</th><th>¿¼ÇÚ²¹Ìù¹¤Ê±</th><th>·¢Æ±²¹Ìù¹¤Ê±</th></tr></thead><tbody id="resultTable"></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>å‘˜å·¥å§“å</th><th>è€ƒå‹¤å·¥æ—¶</th><th>å‘ç¥¨å·¥æ—¶</th><th>å·®å¼‚</th><th>åˆ¤å®š</th><th>ç­æ¬¡è¡¥è´´</th><th>è€ƒå‹¤è¡¥è´´å·¥æ—¶</th><th>å‘ç¥¨è¡¥è´´å·¥æ—¶</th></tr></thead><tbody id="resultTable"></tbody></table></div>
 </div>
 <div class="card" id="reviewCard" style="display:none">
-<div class="card-title"><span class="icon red">&#9888;</span> ´ıÈË¹¤¸´ºË</div>
+<div class="card-title"><span class="icon red">&#9888;</span> å¾…äººå·¥å¤æ ¸</div>
 <div id="reviewContent"></div>
 <div style="margin-top:16px;display:flex;gap:12px">
-<button class="btn btn-accent" onclick="exportReviewXlsx()">&#128229; ÏÂÔØEXCEL</button>
+<button class="btn btn-accent" onclick="exportReviewXlsx()">&#128229; ä¸‹è½½EXCEL</button>
 </div>
 </div></div>
 </div>
@@ -196,13 +197,13 @@ tr:hover td{background:rgba(0,212,255,0.02)}
 <div id="rulesModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:200;backdrop-filter:blur(4px)">
 <div style="max-width:800px;margin:40px auto;background:var(--card);border-radius:16px;border:1px solid var(--border);padding:32px;max-height:85vh;overflow-y:auto">
 <div style="display:flex;justify-content:space-between;margin-bottom:24px">
-<h2 style="font-size:18px">&#9998; ¹æÔò±à¼­Æ÷</h2>
+<h2 style="font-size:18px">&#9998; è§„åˆ™ç¼–è¾‘å™¨</h2>
 <button onclick="closeRules()" style="background:none;border:none;color:var(--text2);font-size:24px;cursor:pointer">&times;</button>
 </div>
 <div id="rulesContent"></div>
 <div style="margin-top:20px;display:flex;gap:12px;justify-content:flex-end">
-<button class="btn btn-outline" onclick="closeRules()">È¡Ïû</button>
-<button class="btn btn-primary" onclick="saveRules()">&#128190; ±£´æ</button>
+<button class="btn btn-outline" onclick="closeRules()">å–æ¶ˆ</button>
+<button class="btn btn-primary" onclick="saveRules()">&#128190; ä¿å­˜</button>
 </div></div></div>
 
 <div class="toast" id="toast"></div>
@@ -211,26 +212,6 @@ tr:hover td{background:rgba(0,212,255,0.02)}
 let state={step:0,attendance:null,invoices:null,results:null,currentRules:null};
 const panels=['panel0','panel1','panel2','panel3','panel4','panel5'];
 
-
-// ¹ú¼Ò-¹©Ó¦ÉÌÁª¶¯
-document.getElementById('selCountry').addEventListener('change', function() {
-  var selCountry = this.value;
-  var supSelect = document.getElementById('selSupplier');
-  var options = supSelect.querySelectorAll('option');
-  var firstVisible = null;
-  options.forEach(function(opt) {
-    if (opt.dataset.country === selCountry) {
-      opt.style.display = '';
-      if (!firstVisible) firstVisible = opt;
-    } else {
-      opt.style.display = 'none';
-    }
-  });
-  // Auto-select first visible option
-  if (firstVisible) supSelect.value = firstVisible.value;
-});
-// Trigger on load
-document.getElementById('selCountry').dispatchEvent(new Event('change'));
 function goStep(n){
   state.step=n;
   panels.forEach((p,i)=>{document.getElementById(p).classList.toggle('active',i===n)});
@@ -245,18 +226,32 @@ function navToStep(el){
   if(n<=state.step) goStep(n);
 }
 
+// Country-Supplier linkage
+document.getElementById('selCountry').onchange=function(){
+  const country=this.value;
+  document.querySelectorAll('#selSupplier option').forEach(o=>{
+    o.style.display=o.dataset.country===country?'':'none';
+  });
+  const firstVis=document.querySelector('#selSupplier option:not([style*="none"])');
+  if(firstVis) document.getElementById('selSupplier').value=firstVis.value;
+};
+document.getElementById('selSupplier').onchange=function(){
+  // Re-fetch rules when supplier changes
+  state.currentRules=null;
+};
+
 document.getElementById('attFile').onchange=function(){
   const info=document.getElementById('attFileInfo');
   if(this.files.length){info.style.display='block';info.textContent=this.files[0].name+' ('+(this.files[0].size/1024).toFixed(1)+' KB)'}
 };
 document.getElementById('invFiles').onchange=function(){
   const info=document.getElementById('invFileInfo');
-  if(this.files.length){info.style.display='block';info.textContent=this.files.length+' ¸öÎÄ¼şÒÑÑ¡Ôñ'}
+  if(this.files.length){info.style.display='block';info.textContent=this.files.length+' ä¸ªæ–‡ä»¶å·²é€‰æ‹©'}
 };
 
-async function parse¿¼ÇÚ¹¤Ê±(){
+async function parseAttendance(){
   const fi=document.getElementById('attFile');
-  if(!fi.files.length){toast('ÇëÑ¡ÔñÎÄ¼ş','error');return}
+  if(!fi.files.length){toast('è¯·é€‰æ‹©æ–‡ä»¶','error');return}
   const fd=new FormData();
   fd.append('file',fi.files[0]);fd.append('country',document.getElementById('selCountry').value);
   fd.append('supplier',document.getElementById('selSupplier').value);
@@ -267,26 +262,37 @@ async function parse¿¼ÇÚ¹¤Ê±(){
     const d=await r.json();
     if(d.error){toast(d.error,'error');return}
     state.attendance=d;
+    
+    // Stats with night hours
     const s=document.getElementById('attStats');
-    s.innerHTML='<div class="stat-card"><div class="stat-value blue">'+d.employee_count+'</div><div class="stat-label">Ô±¹¤</div></div><div class="stat-card"><div class="stat-value blue">'+d.total_hours.toFixed(2)+'h</div><div class="stat-label">×Ü¹¤Ê±</div></div><div class="stat-card"><div class="stat-value purple">'+((d.total_night_hours||0).toFixed(2))+'h</div><div class="stat-label">Ò¹°à¹¤Ê±</div></div><div class="stat-card"><div class="stat-value blue">'+d.period_start+'</div><div class="stat-label">¿ªÊ¼</div></div><div class="stat-card"><div class="stat-value blue">'+d.period_end+'</div><div class="stat-label">½áÊø</div></div>';
+    let statsHtml='<div class="stat-card"><div class="stat-value blue">'+d.employee_count+'</div><div class="stat-label">å‘˜å·¥æ•°</div></div>'+
+      '<div class="stat-card"><div class="stat-value blue">'+d.total_hours.toFixed(2)+'h</div><div class="stat-label">æ€»å·¥æ—¶</div></div>';
+    if(d.total_night_hours!==undefined){
+      statsHtml+='<div class="stat-card"><div class="stat-value amber">'+d.total_night_hours.toFixed(2)+'h</div><div class="stat-label">å¤œç­å·¥æ—¶</div></div>';
+    }
+    statsHtml+='<div class="stat-card"><div class="stat-value blue">'+d.period_start+'</div><div class="stat-label">å¼€å§‹</div></div>'+
+      '<div class="stat-card"><div class="stat-value blue">'+d.period_end+'</div><div class="stat-label">ç»“æŸ</div></div>';
+    s.innerHTML=statsHtml;
+    
+    // Table with night hours column
     const tb=document.getElementById('attTable');
     tb.innerHTML='';
     d.employees.forEach(e=>{
       const recs=d.records.filter(r=>r.name===e&&r.status==='present');
       const h=recs.reduce((s,r)=>s+r.hours,0);
+      const nh=recs.reduce((s,r)=>s+(r.night_hours||0),0);
       const days=recs.length;
       const shifts=recs.map(r=>r.raw_time).filter(Boolean).join(', ');
-      var night=d.records.filter(r=>r.name===e).reduce((s,r)=>s+(r.night_hours||0),0);
-      tb.innerHTML+='<tr><td>'+e+'</td><td>'+h.toFixed(2)+'h</td><td>'+(night>0?night.toFixed(2)+'h':'ÎŞ')+'</td><td>'+days+'</td><td style="font-size:11px;color:var(--text2)">'+shifts+'</td></tr>';
+      tb.innerHTML+='<tr><td>'+e+'</td><td>'+h.toFixed(2)+'h</td><td>'+(nh>0?nh.toFixed(2)+'h':'0h')+'</td><td>'+days+'</td><td style="font-size:11px;color:var(--text2)">'+shifts+'</td></tr>';
     });
-    goStep(2);toast('Parsed: '+d.employee_count+' employees, '+d.total_hours+'h','success');
-  }catch(e){toast('Ê§°Ü: '+e.message,'error')}
+    goStep(2);toast('è§£æå®Œæˆ: '+d.employee_count+' ä¸ªå‘˜å·¥, '+d.total_hours.toFixed(2)+'h','success');
+  }catch(e){toast('å¤±è´¥: '+e.message,'error')}
   finally{el.classList.remove('active');document.getElementById('btnParseAtt').disabled=false}
 }
 
-async function parse·¢Æ±¹¤Ê±s(){
+async function parseInvoices(){
   const fi=document.getElementById('invFiles');
-  if(!fi.files.length){toast('Select PDFs','error');return}
+  if(!fi.files.length){toast('è¯·é€‰æ‹©PDFæ–‡ä»¶','error');return}
   const fd=new FormData();
   for(const f of fi.files)fd.append('files',f);
   const el=document.getElementById('invLoading');el.classList.add('active');
@@ -296,14 +302,14 @@ async function parse·¢Æ±¹¤Ê±s(){
     const d=await r.json();
     if(d.error){toast(d.error,'error');return}
     state.invoices=d;
-    goStep(4);toast(Object.keys(d).length+' invoice(s) ÒÑ½âÎö','success');
+    goStep(4);toast(Object.keys(d).length+' ä»½å‘ç¥¨å·²è§£æ','success');
     const p=document.getElementById('reconPreview');
     const att=state.attendance;
     const invCount=Object.keys(d).length;
     const empCount=Object.values(d).reduce((s,i)=>s+(i.employees?i.employees.length:0),0);
-    const inv¹¤Ê±=Object.values(d).reduce((s,i)=>s+i.total_hours,0);
-    p.innerHTML='<div class="stat-card"><div class="stat-value green">'+att.employee_count+'</div><div class="stat-label">¿¼ÇÚÈËÊı</div></div><div class="stat-card"><div class="stat-value blue">'+empCount+'</div><div class="stat-label">·¢Æ±ÈËÊı</div></div><div class="stat-card"><div class="stat-value amber">'+invCount+'</div><div class="stat-label">·¢Æ±·İÊı</div></div><div class="stat-card"><div class="stat-value purple">'+inv¹¤Ê±.toFixed(2)+'h</div><div class="stat-label">·¢Æ±×Ü¹¤Ê±</div></div>';
-  }catch(e){toast('Ê§°Ü: '+e.message,'error')}
+    const invHours=Object.values(d).reduce((s,i)=>s+i.total_hours,0);
+    p.innerHTML='<div class="stat-card"><div class="stat-value green">'+att.employee_count+'</div><div class="stat-label">è€ƒå‹¤äººæ•°</div></div><div class="stat-card"><div class="stat-value blue">'+empCount+'</div><div class="stat-label">å‘ç¥¨äººæ•°</div></div><div class="stat-card"><div class="stat-value amber">'+invCount+'</div><div class="stat-label">å‘ç¥¨ä»½æ•°</div></div><div class="stat-card"><div class="stat-value purple">'+invHours.toFixed(2)+'h</div><div class="stat-label">å‘ç¥¨æ€»å·¥æ—¶</div></div>';
+  }catch(e){toast('å¤±è´¥: '+e.message,'error')}
   finally{el.classList.remove('active');document.getElementById('btnParseInv').disabled=false}
 }
 
@@ -317,37 +323,43 @@ async function runRecon(){
     state.results=d;
     const v={};
     d.results.forEach(r=>v[r.verdict]=(v[r.verdict]||0)+1);
-    document.getElementById('resultStats').innerHTML=
-      '<div class="stat-card"><div class="stat-value blue">'+d.total_att.toFixed(2)+'h</div><div class="stat-label">¿¼ÇÚ¹¤Ê±</div></div>'+
-      '<div class="stat-card"><div class="stat-value green">'+d.total_inv.toFixed(2)+'h</div><div class="stat-label">·¢Æ±¹¤Ê±</div></div>'+
-      '<div class="stat-card"><div class="stat-value '+(v.mismatch?'red':'green')+'">'+(v.auto_approved||0)+'</div><div class="stat-label">Auto OK</div></div>'+
-      '<div class="stat-card"><div class="stat-value '+((v.mismatch||0)>0?'red':'green')+'">'+(v.mismatch||0)+'</div><div class="stat-label">Mismatch</div></div>'+
-      '<div class="stat-card"><div class="stat-value purple">'+(v.manual_review||0)+'</div><div class="stat-label">²é¿´Êı¾İ</div></div>'+
-      '<div class="stat-card"><div class="stat-value amber">$'+d.total_amt.toFixed(2)+'</div><div class="stat-label">Amount</div></div>';
-    const tb=document.getElementById('resultTable');tb.innerHTML='';
+    
+    // Stats with night hours
+    let rsHtml='<div class="stat-card"><div class="stat-value blue">'+d.total_att.toFixed(2)+'h</div><div class="stat-label">è€ƒå‹¤å·¥æ—¶</div></div>'+
+      '<div class="stat-card"><div class="stat-value green">'+d.total_inv.toFixed(2)+'h</div><div class="stat-label">å‘ç¥¨å·¥æ—¶</div></div>';
+    if(d.total_night_hours!==undefined){
+      rsHtml+='<div class="stat-card"><div class="stat-value amber">'+d.total_night_hours.toFixed(2)+'h</div><div class="stat-label">å¤œç­å·¥æ—¶</div></div>';
+    }
+    rsHtml+='<div class="stat-card"><div class="stat-value '+(v.mismatch?'red':'green')+'">'+(v.auto_approved||0)+'</div><div class="stat-label">è‡ªåŠ¨é€šè¿‡</div></div>'+
+      '<div class="stat-card"><div class="stat-value '+(v.mismatch?'red':'green')+'">'+(v.mismatch||0)+'</div><div class="stat-label">éœ€å¤„ç†</div></div>'+
+      '<div class="stat-card"><div class="stat-value amber">'+(v.manual_review||0)+'</div><div class="stat-label">å¾…äººå·¥</div></div>';
+    document.getElementById('resultStats').innerHTML=rsHtml;
+    
+    const tb=document.getElementById('resultTable');
+    tb.innerHTML='';
     let reviewHtml='';
     d.results.forEach(r=>{
-      const vc=r.verdict==='auto_approved'?'tag-auto':r.verdict==='match'?'tag-ok':r.verdict==='minor_diff'?'tag-minor':r.verdict==='manual_review'?'tag-review':'tag-mismatch';
-      const vl=r.verdict==='auto_approved'?'×Ô¶¯Í¨¹ı':r.verdict==='match'?'Ò»ÖÂ':r.verdict==='minor_diff'?'ÇáÎ¢²îÒì':r.verdict==='manual_review'?'²é¿´Êı¾İ':'Òì³£';
-      const ds=(r.diff_hours>0?'+':'')+r.diff_hours.toFixed(2);
-      const cl=r.diff_hours>0.5?'var(--danger)':r.diff_hours<-0.5?'var(--warn)':'var(--success)';
+      const ds=(r.att_hours-r.inv_hours).toFixed(2);
+      const vl=r.verdict==='auto_approved'?'é€šè¿‡':r.verdict==='mismatch'?'å·®å¼‚':r.verdict==='manual_review'?'å¾…å®¡æ ¸':r.verdict;
+      const vc=r.verdict==='auto_approved'?'green':r.verdict==='mismatch'?'red':'amber';
+      const cl=Math.abs(r.att_hours-r.inv_hours)<0.01?'var(--success)':'var(--warn)';
       const sc=r.supplement_check;
-      let suppStatus='ÎŞ', attSuppH='-', invSuppH='-';
+      let suppStatus='æ— ', attSuppH='-', invSuppH='-';
       if(sc){
-        const sm={'ok':'Õı³£','missing':'È±Ê§','hours_mismatch':'¹¤Ê±²»·û','unexpected':'Òì³£'};
+        const sm={'ok':'æ­£å¸¸','missing':'ç¼ºå¤±','hours_mismatch':'å·¥æ—¶ä¸ç¬¦','unexpected':'å¼‚å¸¸'};
         suppStatus=sm[sc.status]||sc.status;
         attSuppH=(sc.att_hours||0).toFixed(2)+'h';
         invSuppH=(sc.inv_hours||0).toFixed(2)+'h';
       }
-            const stCl=sc&&sc.status==='ok'?'tag-supp-ok':sc&&sc.status==='missing'?'tag-supp-missing':sc&&sc.status==='hours_mismatch'?'tag-supp-amt':'tag-supp-amt';
+      const stCl=sc&&sc.status==='ok'?'tag-supp-ok':sc&&sc.status==='missing'?'tag-supp-missing':sc&&sc.status==='hours_mismatch'?'tag-supp-amt':'tag-supp-amt';
       tb.innerHTML+='<tr><td>'+r.att_name+'</td><td>'+r.att_hours.toFixed(2)+'h</td><td>'+r.inv_hours.toFixed(2)+'h</td><td style="color:'+cl+'">'+ds+'h</td><td><span class="tag '+vc+'">'+vl+'</span></td><td><span class="tag-supp '+stCl+'">'+suppStatus+'</span></td><td>'+attSuppH+'</td><td>'+invSuppH+'</td></tr>';
       if(r.verdict==='manual_review'||r.verdict==='mismatch'){
         reviewHtml+='<div style="padding:10px 14px;background:var(--bg2);border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between"><span><strong>'+r.att_name+'</strong> '+r.att_hours.toFixed(2)+'h vs '+r.inv_hours.toFixed(2)+'h</span><span class="tag '+vc+'">'+r.verdict+'</span></div>'
       }
     });
     if(reviewHtml){document.getElementById('reviewCard').style.display='block';document.getElementById('reviewContent').innerHTML=reviewHtml}
-    goStep(5);toast('ºË¶ÔÍê³É','success');
-  }catch(e){toast('Ê§°Ü: '+e.message,'error')}
+    goStep(5);toast('æ ¸å¯¹å®Œæˆ','success');
+  }catch(e){toast('å¤±è´¥: '+e.message,'error')}
   finally{el.classList.remove('active')}
 }
 
@@ -356,9 +368,9 @@ async function openRules(){
   try{
     const r=await fetch('/api/rules/'+document.getElementById('selCountry').value+'/'+document.getElementById('selSupplier').value);
     const d=await r.json();
-    if(d.error){toast('Î´ÕÒµ½¸Ã¹©Ó¦ÉÌµÄ¹æÔò','info');return}
+    if(d.error){toast('æœªæ‰¾åˆ°è¯¥ä¾›åº”å•†çš„è§„åˆ™','info');return}
     state.currentRules=d;
-    let html='<div class="form-group"><label>±êÇ©</label><input id="ruleLabel" value="'+d.label+'" style="width:100%;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;color:var(--text)"></div>';
+    let html='<div class="form-group"><label>æ ‡ç­¾</label><input id="ruleLabel" value="'+d.label+'" style="width:100%;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;color:var(--text)"></div>';
     Object.entries(d.rules).forEach(([key,rule])=>{
       const en=rule.enabled!==false;
       html+='<div class="rule-toggle"><div><div class="rule-name">'+(rule.label||key.replace(/_/g,' '))+'</div><div class="rule-desc">'+(rule.description||'')+'</div></div><div class="toggle-switch '+(en?'on':'')+'" data-key="'+key+'" onclick="this.classList.toggle(\'on\')"></div></div>';
@@ -372,9 +384,9 @@ async function openRules(){
       });
       html+='</div>';
     });
-    html+='<div class="form-group" style="margin-top:16px"><label>¿ÆÄ¿·ÖÀà (JSON)</label><textarea id="ruleItemClass">'+JSON.stringify(d.item_classification||{},null,2)+'</textarea></div>';
+    html+='<div class="form-group" style="margin-top:16px"><label>ç§‘ç›®åˆ†ç±» (JSON)</label><textarea id="ruleItemClass">'+JSON.stringify(d.item_classification||{},null,2)+'</textarea></div>';
     document.getElementById('rulesContent').innerHTML=html;
-  }catch(e){toast('Ê§°Ü: '+e.message,'error')}
+  }catch(e){toast('å¤±è´¥: '+e.message,'error')}
 }
 function closeRules(){document.getElementById('rulesModal').style.display='none'}
 
@@ -393,61 +405,41 @@ async function saveRules(){
     });
   });
   let ic;
-  try{ic=JSON.parse(document.getElementById('ruleItemClass').value)}catch(e){toast('JSON¸ñÊ½ÎŞĞ§','error');return}
+  try{ic=JSON.parse(document.getElementById('ruleItemClass').value)}catch(e){toast('JSONæ ¼å¼æ— æ•ˆ','error');return}
   const payload={...state.currentRules,label:document.getElementById('ruleLabel').value,rules,item_classification:ic};
   try{
     const r=await fetch('/api/rules/'+payload.country+'/'+payload.supplier,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const d=await r.json();
-    if(d.status==='ok'){state.currentRules=payload;toast('¹æÔòÒÑ±£´æ','success');closeRules()}
-    else toast('&#128190; ±£´æ failed','error');
+    if(d.status==='ok'){state.currentRules=payload;toast('è§„åˆ™å·²ä¿å­˜','success');closeRules()}
+    else toast('ä¿å­˜å¤±è´¥','error');
   }catch(e){toast('Error: '+e.message,'error')}
 }
 
 function exportReviewXlsx(){
   fetch('/api/export-review',{method:'POST'})
   .then(r=>{
-    if(!r.ok){r.json().then(d=>toast(d.error||'µ¼³öÊ§°Ü','error'));return}
+    if(!r.ok){r.json().then(d=>toast(d.error||'å¯¼å‡ºå¤±è´¥','error'));return}
     r.blob().then(blob=>{
       const a=document.createElement('a');
       a.href=URL.createObjectURL(blob);
-      a.download='ÈË¹¤¸´ºËÊı¾İ.xlsx';
+      a.download='äººå·¥å¤æ ¸æ•°æ®.xlsx';
       a.click();
       URL.revokeObjectURL(a.href);
-      toast('µ¼³ö³É¹¦','success');
+      toast('å¯¼å‡ºæˆåŠŸ','success');
     })
   })
-  .catch(e=>toast('µ¼³öÊ§°Ü: '+e.message,'error'));
+  .catch(e=>toast('å¯¼å‡ºå¤±è´¥: '+e.message,'error'));
 }
 
-
-function renderAttStats(d,hasNight){
-    const el=document.getElementById('attStats');
-    var h='<div class="stat-card"><div class="stat-value blue">'+d.employee_count+'</div><div class="stat-label">Ô±¹¤</div></div><div class="stat-card"><div class="stat-value blue">'+d.total_hours.toFixed(2)+'h</div><div class="stat-label">×Ü¹¤Ê±</div></div>';
-    
-    h+='<div class="stat-card"><div class="stat-value blue">'+d.period_start+'</div><div class="stat-label">¿ªÊ¼</div></div><div class="stat-card"><div class="stat-value blue">'+d.period_end+'</div><div class="stat-label">½áÊø</div></div>';
-    el.innerHTML=h;
-    var thHtml='<th>Ô±¹¤ĞÕÃû</th><th>¹¤Ê±</th>';
-    
-    thHtml+='<th>ÌìÊı</th><th>°à´Î</th>';
-    document.querySelector('#panel2 .table-wrap thead tr').innerHTML=thHtml;
-    var tb=document.getElementById('attTable');
-    tb.innerHTML='';
-    d.employees.forEach(function(e){
-      var recs=d.records.filter(function(r){return r.name===e&&r.status==='present'});
-      var hh=recs.reduce(function(s,r){return s+r.hours},0);
-      var nh=recs.reduce(function(s,r){return s+(r.night_hours||0)},0);
-      var days=recs.length;
-      var shifts=recs.map(function(r){return r.raw_time}).filter(Boolean).join(', ');
-      var row='<td>'+e+'</td><td>'+hh.toFixed(2)+'h</td>';
-      
-      row+='<td>'+days+'</td><td style="font-size:11px;color:var(--text2)">'+shifts+'</td>';
-      tb.innerHTML+='<tr>'+row+'</tr>';
-    });
-}
 function toast(msg,type){
   const el=document.getElementById('toast');
   el.textContent=msg;el.className='toast toast-'+type+' show';
   setTimeout(()=>el.classList.remove('show'),3500);
 }
-</script></body></html>
 
+// Trigger country-supplier linkage on load
+setTimeout(()=>{
+  const ce=document.getElementById('selCountry');
+  if(ce) ce.dispatchEvent(new Event('change'));
+}, 100);
+</script></body></html>

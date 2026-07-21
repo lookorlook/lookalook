@@ -7,13 +7,16 @@ from typing import List, Dict, Optional
 
 class AttendanceRecord:
     def __init__(self, employee_name: str, date: str, hours: float, 
-                 role: str = "", status: str = "present", raw_time_slot: str = ""):
+                 role: str = "", status: str = "present", raw_time_slot: str = "",
+                 night_hours: float = 0.0):
         self.employee_name = employee_name
         self.date = date
         self.hours = hours
+        self.night_hours = night_hours
         self.role = role
         self.status = status
         self.raw_time_slot = raw_time_slot
+        self.night_hours = night_hours
 
 class AttendanceSheet:
     def __init__(self, period_start: str = "", period_end: str = ""):
@@ -28,6 +31,12 @@ class AttendanceSheet:
                    and r.status == "present")
     def get_total_hours(self) -> float:
         return sum(r.hours for r in self.records if r.status == "present")
+    def get_total_night_hours(self) -> float:
+        return sum(r.night_hours for r in self.records if r.status == "present")
+    def get_night_hours_by_employee(self, name: str) -> float:
+        return sum(r.night_hours for r in self.records 
+                   if r.employee_name.lower().strip() == name.lower().strip()
+                   and r.status == "present")
     def get_employees(self) -> List[str]:
         seen = set(); result = []
         for r in self.records:
