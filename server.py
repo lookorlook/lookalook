@@ -411,6 +411,139 @@ def api_export_review():
         download_name="人工复核数据.xlsx",
     )
 
+
+@app.route("/api/export-attendance", methods=["POST"])
+def api_export_attendance():
+    """Export attendance data as XLSX."""
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    
+    sid = session.get("session_id")
+    if not sid:
+        return jsonify({"error": "No session data"}), 400
+    
+    att_path = os.path.join(UPLOAD_FOLDER, sid + "_attendance.json")
+    if not os.path.exists(att_path):
+        return jsonify({"error": "No attendance data. Parse attendance first."}), 400
+    
+    with open(att_path, "r", encoding="utf-8") as _f:
+        att = json.load(_f)
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "考勤数据"
+    
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    header_fill = PatternFill(start_color="1A1F35", end_color="1A1F35", fill_type="solid")
+    thin_border = Border(
+        left=Side(style="thin", color="2A3050"),
+        right=Side(style="thin", color="2A3050"),
+        top=Side(style="thin", color="2A3050"),
+        bottom=Side(style="thin", color="2A3050"),
+    )
+    
+    # Title row
+    ws.merge_cells("A1:E1")
+    title_cell = ws.cell(1, 1, f"考勤数据 ({att.get('period_start','')} ~ {att.get('period_end','')})")
+    title_cell.font = Font(bold=True, size=13, color="00D4FF")
+    title_cell.alignment = Alignment(horizontal="center")
+    
+    # Subtitle row
+    ws.merge_cells("A2:E2")
+    ws.cell(2, 1, f"员工: {att.get('employee_count',0)} 人 | 总工时: {att.get('total_hours',0)}h | 夜班工时: {att.get('total_night_hours',0)}h")
+    ws.cell(2, 1).font = Font(size=10, color="94A3B8")
+    ws.cell(2, 1).alignment = Alignment(horizontal="center")
+    
+    # Headers row 3
+    headers = ["员工姓名", "日期", "工时", "夜班工时", "班次"]
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(3, col, h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+        cell.border = thin_border
+    
+    # Data rows
+    row = 4
+    for rec in att.get("records", []):
+        if rec.get("status") != "present":
+            continue
+        ws.cell(row, 1, rec.get("name", ""))
+        ws.cell(row, 2, rec.get("date", ""))
+        ws.cell(row, 3, rec.get("hours", 0))
+        ws.cell(row, 4, rec.get("night_hours", 0))
+        ws.cell(row, 5, rec.get("raw_time", ""))
+        for col in range(1, 6):
+            cell = ws.cell(row, col)
+            cell.border = thin_border
+            cell.alignment = Alignment(horizontal="center" if col != 1 else "left")
+        row += 1
+    
+    # Employee summary section
+    row += 1
+    ws.merge_cells(f"A{row}:E{row}")
+    ws.cell(row, 1, "员工汇总").font = Font(bold=True, size=12, color="00D4FF")
+    row += 1
+    
+    sum_headers = ["员工姓名", "总工时", "夜班工时", "出勤天数", "班次"]
+    for col, h in enumerate(sum_headers, 1):
+        cell = ws.cell(row, col, h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+        cell.border = thin_border
+    row += 1
+    
+    # Calculate employee summary from records
+    emp_data = {}
+    for rec in att.get("records", []):
+        if rec.get("status") != "present":
+            continue
+        name = rec.get("name", "")
+        if name not in emp_data:
+            emp_data[name] = {"hours": 0, "night": 0, "days": 0, "shifts": []}
+        emp_data[name]["hours"] += rec.get("hours", 0)
+        emp_data[name]["night"] += rec.get("night_hours", 0)
+        emp_data[name]["days"] += 1
+        rt = rec.get("raw_time", "")
+        if rt and rt not in emp_data[name]["shifts"]:
+            emp_data[name]["shifts"].append(rt)
+    
+    for name in att.get("employees", []):
+        d = emp_data.get(name, {})
+        ws.cell(row, 1, name)
+        ws.cell(row, 2, round(d.get("hours", 0), 2))
+        ws.cell(row, 3, round(d.get("night", 0), 2))
+        ws.cell(row, 4, d.get("days", 0))
+        ws.cell(row, 5, ", ".join(d.get("shifts", [])))
+        for col in range(1, 6):
+            ws.cell(row, col).border = thin_border
+        row += 1
+    
+    # Column widths
+    ws.column_dimensions["A"].width = 28
+    ws.column_dimensions["B"].width = 14
+    ws.column_dimensions["C"].width = 10
+    ws.column_dimensions["D"].width = 12
+    ws.column_dimensions["E"].width = 30
+    
+    import tempfile
+    tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
+    wb.save(tmp.name)
+    tmp.close()
+    
+    with open(tmp.name, "rb") as _f:
+        data = _f.read()
+    os.unlink(tmp.name)
+    
+    period = att.get("period_start", "attendance")
+    return send_file(
+        io.BytesIO(data),
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=f"考勤数据_{period}.xlsx",
+    )
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True, host="0.0.0.0", port=port)

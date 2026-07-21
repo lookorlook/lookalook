@@ -149,6 +149,7 @@ tr:hover td{background:rgba(0,212,255,0.02)}
 <div class="table-wrap"><table><thead><tr><th>员工姓名</th><th>工时</th><th>夜班</th><th>天数</th><th>班次</th></tr></thead><tbody id="attTable"></tbody></table></div>
 <div style="margin-top:20px;display:flex;gap:12px">
 <button class="btn btn-outline" onclick="goStep(1)">&#8592; 返回</button>
+<button class="btn btn-accent" onclick="exportAttendance()">&#128229; 导出Excel</button>
 <button class="btn btn-primary" onclick="goStep(3)">下一步 &#8594;</button>
 </div>
 </div></div>
@@ -413,6 +414,22 @@ async function saveRules(){
     if(d.status==='ok'){state.currentRules=payload;toast('规则已保存','success');closeRules()}
     else toast('保存失败','error');
   }catch(e){toast('Error: '+e.message,'error')}
+}
+
+function exportAttendance(){
+  fetch('/api/export-attendance',{method:'POST'})
+  .then(r=>{
+    if(!r.ok){r.json().then(d=>toast(d.error||'导出失败','error'));return}
+    r.blob().then(blob=>{
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='考勤数据.xlsx';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast('导出成功','success');
+    })
+  })
+  .catch(e=>toast('导出失败: '+e.message,'error'));
 }
 
 function exportReviewXlsx(){
