@@ -119,8 +119,8 @@ def api_parse_attendance():
         att = parse_attendance(tmp.name, country=country, supplier=supplier)
         records = []
         for rec in att.records:
-            records.append({"name": rec.employee_name, "date": rec.date, "hours": rec.hours, "status": rec.status, "raw_time": rec.raw_time_slot, "role": rec.role})
-        result = {"period_start": att.period_start, "period_end": att.period_end, "total_hours": round(att.get_total_hours(), 2), "employee_count": len(att.get_employees()), "employees": att.get_employees(), "records": records}
+            records.append({"name": rec.employee_name, "date": rec.date, "hours": rec.hours, "night_hours": getattr(rec, "night_hours", 0), "status": rec.status, "raw_time": rec.raw_time_slot, "role": rec.role})
+        result = {"period_start": att.period_start, "period_end": att.period_end, "total_hours": round(att.get_total_hours(), 2), "total_night_hours": round(getattr(att, "get_total_night_hours", lambda: 0)(), 2), "employee_count": len(att.get_employees()), "employees": att.get_employees(), "records": records}
         import uuid
         os.makedirs(UPLOAD_FOLDER, exist_ok=True)
         sid = session.get("session_id") or str(uuid.uuid4())
@@ -278,7 +278,7 @@ def api_reconcile():
         for r in report.results:
             results.append({
                 "name": r["name"], "att_name": r["att_name"],
-                "att_hours": r["att_hours"], "att_days": r.get("att_days", 0),
+                "att_hours": r["att_hours"], "att_night_hours": r.get("att_night_hours", 0), "att_days": r.get("att_days", 0),
                 "inv_hours": r["inv_hours"], "inv_amount": r["inv_amount"],
                 "diff_hours": r["diff_hours"], "diff_percent": r["diff_percent"],
                 "verdict": r["verdict"],
@@ -352,7 +352,7 @@ def api_export_review():
         
         supp_map = {"ok": "正常", "missing": "缺失", "amount_mismatch": "金额不符", "unexpected": "异常"}
         dimona_map = {"ok": "正常", "qty_mismatch": "数量不符"}
-        verdict_map = {"auto_approved": "自动通过", "match": "一�?, "minor_diff": "轻微差异", "manual_review": "查看数据", "mismatch": "异常"}
+        verdict_map = {"auto_approved": "自动通过", "match": "一致", "minor_diff": "轻微差异", "manual_review": "查看数据", "mismatch": "异常"}
         
         supp_status = supp_map.get(supp.get("status"), supp.get("status", ""))
         dimona_status = dimona_map.get(dimona.get("status"), dimona.get("status", ""))

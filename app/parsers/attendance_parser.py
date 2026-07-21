@@ -137,7 +137,7 @@ def parse_tempoteam_attendance(filepath: str, config: dict = None) -> Attendance
     
     return sheet
 
-from renotech_attendance_parser import parse_renotech_attendance
+from .renotech_attendance_parser import parse_renotech_attendance
 
 def parse_attendance(filepath: str, country: str = "belgium",
                      supplier: str = "TEMPOTEAM", config: dict = None) -> AttendanceSheet:
@@ -146,9 +146,6 @@ def parse_attendance(filepath: str, country: str = "belgium",
     supplier_upper = supplier.upper().strip()
     if country_lower == "denmark" and supplier_upper == "RENOTECH":
         return parse_renotech_attendance(filepath, config)
-    return parse_tempoteam_attendance(filepath, config)
-
-                     supplier: str = "TEMPOTEAM", config: dict = None) -> AttendanceSheet:
     return parse_tempoteam_attendance(filepath, config)
 
 if __name__ == "__main__":

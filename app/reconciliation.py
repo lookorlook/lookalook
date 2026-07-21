@@ -109,12 +109,12 @@ class ReconReport:
 
 
 def reconcile(attendance_sheet, invoices, supplier="TEMPOTEAM"):
+    """Reconcile attendance vs invoices with supplier-specific rules."""
     period_label = "%s~%s" % (attendance_sheet.period_start, attendance_sheet.period_end)
     report = ReconReport(period=period_label)
     att_name_set = set()
     for rec in attendance_sheet.records:
         att_name_set.add(rec.employee_name.strip())
-
     invoice_raw_emps = {}
     for inv in invoices:
         for emp in inv.emps:
@@ -124,27 +124,24 @@ def reconcile(attendance_sheet, invoices, supplier="TEMPOTEAM"):
             invoice_raw_emps[name]["hours"] += emp.hours()
             invoice_raw_emps[name]["amount"] += emp.subtotal or sum(i.amt for i in emp.items)
             invoice_raw_emps[name]["items"].extend(emp.items)
-
-    # Score-sorted matching: compute ALL pairs, match highest scores first
-    att_to_inv = {}  # att_name -> inv_name
-    inv_used = set()  # invoice names already matched
+    # Score-sorted matching
+    att_to_inv = {}
+    inv_used = set()
     pairs = []
     for att_name in att_name_set:
         for inv_name in invoice_raw_emps:
             s = _score_name(att_name, inv_name)
             if s >= AUTO_MATCH_THRESHOLD:
                 pairs.append((s, att_name, inv_name))
-    pairs.sort(key=lambda x: -x[0])  # highest score first
+    pairs.sort(key=lambda x: -x[0])
     for s, att_name, inv_name in pairs:
-        if att_name in att_to_inv: continue  # already matched
-        if inv_name in inv_used: continue  # already claimed
+        if att_name in att_to_inv: continue
+        if inv_name in inv_used: continue
         att_to_inv[att_name] = inv_name
         inv_used.add(inv_name)
-    # Unmatched attendance names
     for att_name in att_name_set:
         if att_name not in att_to_inv:
             att_to_inv[att_name] = None
-
     invoice_emps_dict = {}
     for inv_name, inv_data in invoice_raw_emps.items():
         matched_att = None
@@ -163,14 +160,18 @@ def reconcile(attendance_sheet, invoices, supplier="TEMPOTEAM"):
                 "items": inv_data["items"], "_att_name": inv_name, "_unmatched": True,
             }
             report.unmatched_invoice.append(inv_name)
-
     # Apply supplier-specific rules
+    raw_results = None
     if supplier.upper() == "RENOTECH":
         from rules.renotech_rules import apply_renotech_rules
         raw_results = apply_renotech_rules(attendance_sheet, invoice_emps_dict)
     else:
         from rules.tempoteam_rules import apply_tempoteam_rules
         raw_results = apply_tempoteam_rules(attendance_sheet, invoice_emps_dict)
+    for att_name in sorted(att_name_set):
+        if att_to_inv.get(att_name) is None:
+            already = any(r["att_name"] == att_name and r.get("unmatched") for r in raw_results)
+            if not already:
                 att_h = attendance_sheet.get_hours_by_employee(att_name)
                 raw_results.append({
                     "name": att_name, "att_name": att_name,
@@ -183,11 +184,9 @@ def reconcile(attendance_sheet, invoices, supplier="TEMPOTEAM"):
                     "unmatched": True,
                 })
                 report.unmatched_attendance.append(att_name)
-
     for r in raw_results:
         report.add_result(r)
     return report
-
 
 def run_reconciliation(attendance_path, invoice_paths):
     from parsers.attendance_parser import parse_attendance
