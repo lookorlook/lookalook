@@ -235,7 +235,7 @@ def api_reconcile():
             if col and rec["raw_time"]:
                 ws.cell(row, col).value = rec["raw_time"]
         wb.save(tmp_xlsx)
-        att = parse_attendance(tmp_xlsx.name)
+        att = parse_attendance(tmp_xlsx.name, country=country, supplier=supplier)
         tmp_xlsx.close()  # Release handle on Windows
         os.unlink(tmp_xlsx.name)
     except Exception as e:
@@ -273,7 +273,7 @@ def api_reconcile():
             invs[inv.num] = inv
 
     try:
-        report = reconcile(att, list(invs.values()))
+        report = reconcile(att, list(invs.values()), supplier=supplier)
         results = []
         for r in report.results:
             results.append({
@@ -352,7 +352,7 @@ def api_export_review():
         
         supp_map = {"ok": "正常", "missing": "缺失", "amount_mismatch": "金额不符", "unexpected": "异常"}
         dimona_map = {"ok": "正常", "qty_mismatch": "数量不符"}
-        verdict_map = {"auto_approved": "自动通过", "match": "一致", "minor_diff": "轻微差异", "manual_review": "查看数据", "mismatch": "异常"}
+        verdict_map = {"auto_approved": "自动通过", "match": "一�?, "minor_diff": "轻微差异", "manual_review": "查看数据", "mismatch": "异常"}
         
         supp_status = supp_map.get(supp.get("status"), supp.get("status", ""))
         dimona_status = dimona_map.get(dimona.get("status"), dimona.get("status", ""))
@@ -413,4 +413,5 @@ def api_export_review():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True, host="0.0.0.0", port=port)
+
 

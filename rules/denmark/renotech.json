@@ -1,0 +1,45 @@
+{
+  "country": "denmark",
+  "supplier": "RENOTECH",
+  "label": "丹麦 - RENOTECH",
+  "rules": {
+    "night_shift": {
+      "label": "夜班补贴",
+      "enabled": true,
+      "description": "18:00-06:00 期间上班属于夜班",
+      "night_start": 18,
+      "night_end": 6,
+      "rate_pct": 0
+    },
+    "name_matching": {
+      "label": "姓名匹配",
+      "threshold": 0.35,
+      "auto_approve_unmatched_hours": 0.5,
+      "flag_unmatched": true
+    }
+  },
+  "attendance_config": {
+    "has_multiple_sheets": true,
+    "date_format": "decimal_hours",
+    "company_col": 1,
+    "name_col": 2,
+    "day_start_col": 3,
+    "cols_per_day": 3,
+    "time_in_offset": 0,
+    "time_out_offset": 1,
+    "sum_offset": 2,
+    "header_row": 4,
+    "data_start_row": 5,
+    "total_label": "Total"
+  },
+  "item_classification": {
+    "work_hours_items": [
+      "Prestations"
+    ],
+    "supplement_items": [
+      "Supplément équipe"
+    ],
+    "social_items": [],
+    "ignore_items": []
+  }
+}

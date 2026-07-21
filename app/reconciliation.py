@@ -108,7 +108,7 @@ class ReconReport:
         return "\n".join(lines)
 
 
-def reconcile(attendance_sheet, invoices):
+def reconcile(attendance_sheet, invoices, supplier="TEMPOTEAM"):
     period_label = "%s~%s" % (attendance_sheet.period_start, attendance_sheet.period_end)
     report = ReconReport(period=period_label)
     att_name_set = set()
@@ -164,13 +164,13 @@ def reconcile(attendance_sheet, invoices):
             }
             report.unmatched_invoice.append(inv_name)
 
-    from rules.tempoteam_rules import apply_tempoteam_rules
-    raw_results = apply_tempoteam_rules(attendance_sheet, invoice_emps_dict)
-
-    for att_name in sorted(att_name_set):
-        if att_to_inv.get(att_name) is None:
-            already = any(r["att_name"] == att_name and r.get("unmatched") for r in raw_results)
-            if not already:
+    # Apply supplier-specific rules
+    if supplier.upper() == "RENOTECH":
+        from rules.renotech_rules import apply_renotech_rules
+        raw_results = apply_renotech_rules(attendance_sheet, invoice_emps_dict)
+    else:
+        from rules.tempoteam_rules import apply_tempoteam_rules
+        raw_results = apply_tempoteam_rules(attendance_sheet, invoice_emps_dict)
                 att_h = attendance_sheet.get_hours_by_employee(att_name)
                 raw_results.append({
                     "name": att_name, "att_name": att_name,
@@ -195,7 +195,7 @@ def run_reconciliation(attendance_path, invoice_paths):
     attendance = parse_attendance(attendance_path)
     invoices_dict = parse_invoices(invoice_paths)
     invoices = list(invoices_dict.values())
-    report = reconcile(attendance, invoices)
+    report = reconcile(attendance, invoices, supplier="TEMPOTEAM")
     report.attendance_file = Path(attendance_path).name
     for inv_path in invoice_paths:
         report.invoices.append({"file": Path(inv_path).name})
