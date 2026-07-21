@@ -53,7 +53,7 @@ def parse_french_time_slot(time_str: str, deduct_lunch: bool = True) -> float:
         return 0.0
     time_str = time_str.strip()
     upper = time_str.upper()
-    if upper in ("OFF", "ABSENT", "CONG¨¦", "F¨¦RI¨¦", "MALADE"):
+    if upper in ("OFF", "ABSENT", "CONGï¿½ï¿½", "Fï¿½ï¿½RIï¿½ï¿½", "MALADE"):
         return 0.0
     match = TIME_PATTERN.search(time_str)
     if not match:
@@ -74,10 +74,10 @@ def extract_role_from_name(name: str) -> str:
     if match:
         role_text = match.group(1)
         role_map = {
-            "Conducteur de chariot ¨¦l¨¦vateur": ["Cariste", "chariot ¨¦l¨¦vateur", "CARISTE"],
+            "Conducteur de chariot ï¿½ï¿½lï¿½ï¿½vateur": ["Cariste", "chariot ï¿½ï¿½lï¿½ï¿½vateur", "CARISTE"],
             "Douane": ["Douane", "douane"],
             "Manoeuvre": ["Manoeuvre", "WH", "Stack", "STACK", "stack"],
-            "¨¦tudiant": ["TT", "¨¦tudiante", "¨¦tudiant", "Retour", "dispatch"],
+            "ï¿½ï¿½tudiant": ["TT", "ï¿½ï¿½tudiante", "ï¿½ï¿½tudiant", "Retour", "dispatch"],
         }
         for role_name, keywords in role_map.items():
             for kw in keywords:
@@ -137,7 +137,7 @@ def parse_tempoteam_attendance(filepath: str, config: dict = None) -> Attendance
     
     return sheet
 
-from .renotech_attendance_parser import parse_renotech_attendance
+from renotech_attendance_parser import parse_renotech_attendance
 
 def parse_attendance(filepath: str, country: str = "belgium",
                      supplier: str = "TEMPOTEAM", config: dict = None) -> AttendanceSheet:
