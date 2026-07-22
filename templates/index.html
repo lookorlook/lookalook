@@ -146,7 +146,7 @@ tr:hover td{background:rgba(0,212,255,0.02)}
 <div class="card">
 <div class="card-title"><span class="icon green">&#128200;</span> 考勤数据概览</div>
 <div class="stats-grid" id="attStats"></div>
-<div class="table-wrap"><table><thead><tr><th>员工姓名</th><th>工时</th><th>夜班</th><th>天数</th><th>班次</th></tr></thead><tbody id="attTable"></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>员工姓名</th><th>工时</th><th id="subsidyHeader">补贴</th><th>天数</th><th>班次</th></tr></thead><tbody id="attTable"></tbody></table></div>
 <div style="margin-top:20px;display:flex;gap:12px">
 <button class="btn btn-outline" onclick="goStep(1)">&#8592; 返回</button>
 <button class="btn btn-accent" onclick="exportAttendance()">&#128229; 导出Excel</button>
@@ -274,17 +274,18 @@ async function parseAttendance(){
     statsHtml+='<div class="stat-card"><div class="stat-value blue">'+d.period_start+'</div><div class="stat-label">开始</div></div>'+
       '<div class="stat-card"><div class="stat-value blue">'+d.period_end+'</div><div class="stat-label">结束</div></div>';
     s.innerHTML=statsHtml;
+    var sh=document.getElementById('subsidyHeader');if(sh) sh.textContent=d.subsidy_label||'补贴';
     
-    // Table with night hours column
+    // Table with subsidy hours column
     const tb=document.getElementById('attTable');
     tb.innerHTML='';
     d.employees.forEach(e=>{
       const recs=d.records.filter(r=>r.name===e&&r.status==='present');
       const h=recs.reduce((s,r)=>s+r.hours,0);
-      const nh=recs.reduce((s,r)=>s+(r.night_hours||0),0);
+      var nh=0;if(d.subsidy_label==='夜班补贴'||d.subsidy_label==='补贴工时'||!d.subsidy_label){nh=recs.reduce((s,r)=>s+(r.night_hours||0),0);}else{nh=recs.reduce((s,r)=>s+(r.subsidy_hours||0),0);}
       const days=recs.length;
       const shifts=recs.map(r=>r.raw_time).filter(Boolean).join(', ');
-      tb.innerHTML+='<tr><td>'+e+'</td><td>'+h.toFixed(2)+'h</td><td>'+(nh>0?nh.toFixed(2)+'h':'0h')+'</td><td>'+days+'</td><td style="font-size:11px;color:var(--text2)">'+shifts+'</td></tr>';
+      tb.innerHTML+='<tr><td>'+e+'</td><td>'+h.toFixed(2)+'h</td><td>'+(d.subsidy_label?d.subsidy_label+' ':'')+(nh>0?nh.toFixed(2)+'h':'0h')+'</td><td>'+days+'</td><td style="font-size:11px;color:var(--text2)">'+shifts+'</td></tr>';
     });
     goStep(2);toast('解析完成: '+d.employee_count+' 个员工, '+d.total_hours.toFixed(2)+'h','success');
   }catch(e){toast('失败: '+e.message,'error')}

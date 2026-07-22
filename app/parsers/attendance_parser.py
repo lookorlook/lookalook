@@ -13,6 +13,7 @@ class AttendanceRecord:
         self.date = date
         self.hours = hours
         self.night_hours = night_hours
+        self.subsidy_hours = 0.0
         self.role = role
         self.status = status
         self.raw_time_slot = raw_time_slot
@@ -35,6 +36,12 @@ class AttendanceSheet:
         return sum(r.night_hours for r in self.records if r.status == "present")
     def get_night_hours_by_employee(self, name: str) -> float:
         return sum(r.night_hours for r in self.records 
+                   if r.employee_name.lower().strip() == name.lower().strip()
+                   and r.status == "present")
+    def get_total_subsidy_hours(self) -> float:
+        return sum(r.subsidy_hours for r in self.records if r.status == "present")
+    def get_subsidy_hours_by_employee(self, name: str) -> float:
+        return sum(r.subsidy_hours for r in self.records 
                    if r.employee_name.lower().strip() == name.lower().strip()
                    and r.status == "present")
     def get_employees(self) -> List[str]:
@@ -138,11 +145,18 @@ def parse_tempoteam_attendance(filepath: str, config: dict = None) -> Attendance
                 hours = parse_french_time_slot(time_str, deduct_lunch=True)
             raw_time_slot = time_str
             
+            # Calculate subsidy: shifts starting at 6h/11h/14h
+            if status == "present" and hours > 0:
+                start_h = detect_shift_start(raw_time_slot)
+                subsidy_h = hours if start_h in (6, 11, 14) else 0.0
+            else:
+                subsidy_h = 0.0
+            
             month = 6
             day = date_numbers.get(col, 0)
             if day > 0:
                 date_str = f"2026-{month:02d}-{day:02d}"
-                sheet.add_record(AttendanceRecord(name, date_str, hours, role, status, raw_time_slot))
+                sheet.add_record(AttendanceRecord(name, date_str, hours, role, status, raw_time_slot, night_hours=0.0))
     
     return sheet
 

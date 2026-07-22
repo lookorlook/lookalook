@@ -7,11 +7,12 @@ import openpyxl
 from datetime import time, datetime, timedelta
 
 class AttendanceRecord:
-    def __init__(self, employee_name, date, hours, night_hours=0, role="", status="present", raw_time_slot=""):
+    def __init__(self, employee_name, date, hours, night_hours=0, role="", status="present", raw_time_slot="", subsidy_hours=0):
         self.employee_name = employee_name
         self.date = date
         self.hours = hours
         self.night_hours = night_hours
+        self.subsidy_hours = subsidy_hours
         self.role = role
         self.status = status
         self.raw_time_slot = raw_time_slot
@@ -31,6 +32,10 @@ class AttendanceSheet:
         return sum(r.hours for r in self.records if r.status == "present")
     def get_total_night_hours(self):
         return sum(r.night_hours for r in self.records if r.status == "present")
+    def get_total_subsidy_hours(self):
+        return sum(r.subsidy_hours for r in self.records if r.status == "present")
+    def get_subsidy_hours_by_employee(self, name):
+        return sum(r.subsidy_hours for r in self.records if r.employee_name.lower().strip() == name.lower().strip() and r.status == "present")
     def get_employees(self):
         seen = set(); result = []
         for r in self.records:
@@ -143,6 +148,9 @@ def parse_spain_attendance(filepath, supplier=None):
         sheet.add_record(AttendanceRecord(name, date_str, hours, night_hours=night_h,
                                           status="present", raw_time_slot=raw_time))
     
+    # Calculate subsidy (daily overtime for Alliance)
+    _calc_spain_subsidy(sheet, supplier)
+    
     # Determine period
     if seen_dates:
         min_day = min(seen_dates)
@@ -152,6 +160,32 @@ def parse_spain_attendance(filepath, supplier=None):
         sheet.period_end = f"{month_num}/{max_day}"
     
     return sheet
+
+# Post-processing: calculate subsidy hours
+# For ALLIANCE: daily overtime (hours > 8 per day)
+# For RANDSTAD: none
+_KNOWN_DAILY_OT_SUPPLIERS = {"ALLIANCE"}
+
+def _calc_spain_subsidy(sheet, supplier):
+    """Calculate subsidy hours for Spain parsers."""
+    if supplier.upper() not in _KNOWN_DAILY_OT_SUPPLIERS:
+        # RANDSTAD: no subsidy
+        return
+    # Group records by employee+date
+    from collections import defaultdict
+    by_emp_date = defaultdict(list)
+    for r in sheet.records:
+        if r.status == "present":
+            by_emp_date[(r.employee_name.strip(), r.date)].append(r)
+    # For each day, if total > 8h, assign overtime as subsidy
+    for (emp_name, date_str), recs in by_emp_date.items():
+        day_total = sum(r.hours for r in recs)
+        if day_total > 8:
+            daily_ot = day_total - 8
+            # Split overtime proportionally across records for that day
+            for r in recs:
+                if day_total > 0:
+                    r.subsidy_hours = round(r.hours / day_total * daily_ot, 2)
 
 def parse_attendance(filepath, country="spain", supplier="ALLIANCE", config=None):
     return parse_spain_attendance(filepath, supplier)

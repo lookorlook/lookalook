@@ -7,11 +7,12 @@ from typing import List
 from datetime import datetime, timedelta
 
 class AttendanceRecord:
-    def __init__(self, employee_name, date, hours, night_hours=0, role="", status="present", raw_time_slot=""):
+    def __init__(self, employee_name, date, hours, night_hours=0, role="", status="present", raw_time_slot="", subsidy_hours=0):
         self.employee_name = employee_name
         self.date = date
         self.hours = hours
         self.night_hours = night_hours
+        self.subsidy_hours = subsidy_hours
         self.role = role
         self.status = status
         self.raw_time_slot = raw_time_slot
@@ -31,6 +32,10 @@ class AttendanceSheet:
         return sum(r.hours for r in self.records if r.status == "present")
     def get_total_night_hours(self):
         return sum(r.night_hours for r in self.records if r.status == "present")
+    def get_total_subsidy_hours(self):
+        return sum(r.subsidy_hours for r in self.records if r.status == "present")
+    def get_subsidy_hours_by_employee(self, name):
+        return sum(r.subsidy_hours for r in self.records if r.employee_name.lower().strip() == name.lower().strip() and r.status == "present")
     def get_employees(self):
         seen = set(); result = []
         for r in self.records:
@@ -81,7 +86,7 @@ def parse_renotech_attendance(filepath, config=None):
                 to = float(tout) if tout is not None else None
                 night = calculate_night_hours(ti, to) if ti is not None and to is not None else 0
                 raw = f"{tin}-{tout}" if tin else str(sval)
-                sheet.add_record(AttendanceRecord(name, dates[day_idx] if day_idx < len(dates) else "", hrs, night, raw_time_slot=raw))
+                sheet.add_record(AttendanceRecord(name, dates[day_idx] if day_idx < len(dates) else "", hrs, night, raw_time_slot=raw, subsidy_hours=night))
     sn = [s.strip() for s in wb.sheetnames]
     if sn:
         sheet.period_start = sn[0]

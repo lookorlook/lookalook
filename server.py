@@ -126,8 +126,19 @@ def api_parse_attendance():
         att = parse_attendance(tmp.name, country=country, supplier=supplier)
         records = []
         for rec in att.records:
-            records.append({"name": rec.employee_name, "date": rec.date, "hours": rec.hours, "night_hours": getattr(rec, "night_hours", 0), "status": rec.status, "raw_time": rec.raw_time_slot, "role": rec.role})
-        result = {"period_start": att.period_start, "period_end": att.period_end, "total_hours": round(att.get_total_hours(), 2), "total_night_hours": round(getattr(att, "get_total_night_hours", lambda: 0)(), 2), "employee_count": len(att.get_employees()), "employees": att.get_employees(), "records": records}
+            records.append({"name": rec.employee_name, "date": rec.date, "hours": rec.hours, "night_hours": getattr(rec, "night_hours", 0), "subsidy_hours": getattr(rec, "subsidy_hours", 0), "status": rec.status, "raw_time": rec.raw_time_slot, "role": rec.role})
+        # Determine subsidy label
+        sup = supplier.upper().strip()
+        if sup == "TEMPOTEAM":
+            subsidy_label = "班次补贴"
+        elif sup == "RENOTECH":
+            subsidy_label = "夜班补贴"
+        elif sup == "ALLIANCE":
+            subsidy_label = "加班补贴"
+        else:
+            subsidy_label = "补贴工时"
+        
+        result = {"period_start": att.period_start, "period_end": att.period_end, "total_hours": round(att.get_total_hours(), 2), "total_night_hours": round(getattr(att, "get_total_night_hours", lambda: 0)(), 2), "total_subsidy_hours": round(getattr(att, "get_total_subsidy_hours", lambda: 0)(), 2), "subsidy_label": subsidy_label, "employee_count": len(att.get_employees()), "employees": att.get_employees(), "records": records}
         import uuid
         os.makedirs(UPLOAD_FOLDER, exist_ok=True)
         sid = session.get("session_id") or str(uuid.uuid4())
