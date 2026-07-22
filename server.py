@@ -126,7 +126,7 @@ def api_parse_attendance():
         att = parse_attendance(tmp.name, country=country, supplier=supplier)
         records = []
         for rec in att.records:
-            records.append({"name": rec.employee_name, "date": rec.date, "hours": rec.hours, "night_hours": getattr(rec, "night_hours", 0), "subsidy_hours": getattr(rec, "subsidy_hours", 0), "status": rec.status, "raw_time": rec.raw_time_slot, "role": rec.role})
+            records.append({"name": rec.employee_name, "date": rec.date, "hours": rec.hours, "night_hours": getattr(rec, "night_hours", 0), "subsidy_hours": getattr(rec, "subsidy_hours", 0), "overtime_hours": getattr(rec, "overtime_hours", 0), "status": rec.status, "raw_time": rec.raw_time_slot, "role": rec.role})
         # Determine subsidy label
         sup = supplier.upper().strip()
         if sup == "TEMPOTEAM":
@@ -138,7 +138,7 @@ def api_parse_attendance():
         else:
             subsidy_label = "补贴工时"
         
-        result = {"period_start": att.period_start, "period_end": att.period_end, "total_hours": round(att.get_total_hours(), 2), "total_night_hours": round(getattr(att, "get_total_night_hours", lambda: 0)(), 2), "total_subsidy_hours": round(getattr(att, "get_total_subsidy_hours", lambda: 0)(), 2), "subsidy_label": subsidy_label, "employee_count": len(att.get_employees()), "employees": att.get_employees(), "records": records}
+        result = {"period_start": att.period_start, "period_end": att.period_end, "total_hours": round(att.get_total_hours(), 2), "total_night_hours": round(getattr(att, "get_total_night_hours", lambda: 0)(), 2), "total_subsidy_hours": round(getattr(att, "get_total_subsidy_hours", lambda: 0)(), 2), "total_overtime_hours": round(getattr(att, "get_total_overtime_hours", lambda: 0)(), 2), "subsidy_label": subsidy_label, "employee_count": len(att.get_employees()), "employees": att.get_employees(), "records": records}
         import uuid
         os.makedirs(UPLOAD_FOLDER, exist_ok=True)
         sid = session.get("session_id") or str(uuid.uuid4())
@@ -313,6 +313,8 @@ def api_reconcile():
             "total_inv": round(report.total_invoice_hours, 2),
             "total_amt": round(report.total_invoice_amount, 2),
             "total_night_hours": round(sum(r.get("night_hours", 0) for r in att_data.get("records", [])), 2),
+            "total_subsidy_hours": round(sum(r.get("subsidy_hours", 0) for r in att_data.get("records", [])), 2),
+            "total_overtime_hours": round(sum(r.get("overtime_hours", 0) for r in att_data.get("records", [])), 2),
             "employees": len(report.results),
             "results": results,
             "unmatched_att": report.unmatched_attendance,
@@ -475,7 +477,7 @@ def api_export_attendance():
     ws.cell(2, 1).alignment = Alignment(horizontal="center")
     
     # Headers row 3
-    headers = ["员工姓名", "日期", "工时", "夜班工时", "班次"]
+    headers = ["员工姓名", "日期", "工时", "补贴工时", "夜班工时", "加班工时", "班次"]
     for col, h in enumerate(headers, 1):
         cell = ws.cell(3, col, h)
         cell.font = header_font
@@ -492,8 +494,11 @@ def api_export_attendance():
         ws.cell(row, 2, rec.get("date", ""))
         ws.cell(row, 3, rec.get("hours", 0))
         ws.cell(row, 4, rec.get("night_hours", 0))
-        ws.cell(row, 5, rec.get("raw_time", ""))
-        for col in range(1, 6):
+        ws.cell(row, 5, rec.get("subsidy_hours", 0))
+        ws.cell(row, 6, rec.get("night_hours", 0))
+        ws.cell(row, 7, rec.get("overtime_hours", 0))
+        ws.cell(row, 8, rec.get("raw_time", ""))
+        for col in range(1, 9):
             cell = ws.cell(row, col)
             cell.border = thin_border
             cell.alignment = Alignment(horizontal="center" if col != 1 else "left")
@@ -505,7 +510,7 @@ def api_export_attendance():
     ws.cell(row, 1, "员工汇总").font = Font(bold=True, size=12, color="00D4FF")
     row += 1
     
-    sum_headers = ["员工姓名", "总工时", "夜班工时", "出勤天数", "班次"]
+    sum_headers = ["员工姓名", "总工时", "补贴工时", "夜班工时", "加班工时", "出勤天数", "班次"]
     for col, h in enumerate(sum_headers, 1):
         cell = ws.cell(row, col, h)
         cell.font = header_font
@@ -521,9 +526,11 @@ def api_export_attendance():
             continue
         name = rec.get("name", "")
         if name not in emp_data:
-            emp_data[name] = {"hours": 0, "night": 0, "days": 0, "shifts": []}
+            emp_data[name] = {"hours": 0, "subsidy": 0, "night": 0, "overtime": 0, "days": 0, "shifts": []}
         emp_data[name]["hours"] += rec.get("hours", 0)
+        emp_data[name]["subsidy"] += rec.get("subsidy_hours", 0)
         emp_data[name]["night"] += rec.get("night_hours", 0)
+        emp_data[name]["overtime"] += rec.get("overtime_hours", 0)
         emp_data[name]["days"] += 1
         rt = rec.get("raw_time", "")
         if rt and rt not in emp_data[name]["shifts"]:
@@ -533,10 +540,12 @@ def api_export_attendance():
         d = emp_data.get(name, {})
         ws.cell(row, 1, name)
         ws.cell(row, 2, round(d.get("hours", 0), 2))
-        ws.cell(row, 3, round(d.get("night", 0), 2))
-        ws.cell(row, 4, d.get("days", 0))
-        ws.cell(row, 5, ", ".join(d.get("shifts", [])))
-        for col in range(1, 6):
+        ws.cell(row, 3, round(d.get("subsidy", 0), 2))
+        ws.cell(row, 4, round(d.get("night", 0), 2))
+        ws.cell(row, 5, round(d.get("overtime", 0), 2))
+        ws.cell(row, 6, d.get("days", 0))
+        ws.cell(row, 7, ", ".join(d.get("shifts", [])))
+        for col in range(1, 8):
             ws.cell(row, col).border = thin_border
         row += 1
     
@@ -544,8 +553,10 @@ def api_export_attendance():
     ws.column_dimensions["A"].width = 28
     ws.column_dimensions["B"].width = 14
     ws.column_dimensions["C"].width = 10
-    ws.column_dimensions["D"].width = 12
-    ws.column_dimensions["E"].width = 30
+    ws.column_dimensions["D"].width = 10
+    ws.column_dimensions["E"].width = 10
+    ws.column_dimensions["F"].width = 10
+    ws.column_dimensions["G"].width = 30
     
     import tempfile
     tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)

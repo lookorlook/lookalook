@@ -13,6 +13,7 @@ class AttendanceRecord:
         self.hours = hours
         self.night_hours = night_hours
         self.subsidy_hours = subsidy_hours
+        self.overtime_hours = 0
         self.role = role
         self.status = status
         self.raw_time_slot = raw_time_slot
@@ -36,6 +37,10 @@ class AttendanceSheet:
         return sum(r.subsidy_hours for r in self.records if r.status == "present")
     def get_subsidy_hours_by_employee(self, name):
         return sum(r.subsidy_hours for r in self.records if r.employee_name.lower().strip() == name.lower().strip() and r.status == "present")
+    def get_total_overtime_hours(self):
+        return sum(r.overtime_hours for r in self.records if r.status == "present")
+    def get_overtime_hours_by_employee(self, name):
+        return sum(r.overtime_hours for r in self.records if r.employee_name.lower().strip() == name.lower().strip() and r.status == "present")
     def get_employees(self):
         seen = set(); result = []
         for r in self.records:

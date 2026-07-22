@@ -13,6 +13,7 @@ class AttendanceRecord:
         self.hours = hours
         self.night_hours = night_hours
         self.subsidy_hours = subsidy_hours
+        self.overtime_hours = 0
         self.role = role
         self.status = status
         self.raw_time_slot = raw_time_slot
@@ -36,6 +37,10 @@ class AttendanceSheet:
         return sum(r.subsidy_hours for r in self.records if r.status == "present")
     def get_subsidy_hours_by_employee(self, name):
         return sum(r.subsidy_hours for r in self.records if r.employee_name.lower().strip() == name.lower().strip() and r.status == "present")
+    def get_total_overtime_hours(self):
+        return sum(r.overtime_hours for r in self.records if r.status == "present")
+    def get_overtime_hours_by_employee(self, name):
+        return sum(r.overtime_hours for r in self.records if r.employee_name.lower().strip() == name.lower().strip() and r.status == "present")
     def get_employees(self):
         seen = set(); result = []
         for r in self.records:
@@ -226,6 +231,10 @@ def _calc_spain_subsidy(sheet, supplier):
                 if total > 0:
                     r.subsidy_hours = round(r.hours / total * monthly_ot, 2)
             emp_used_monthly[name] = True
+            # Alliance overtime = the monthly OT (also set as overtim_hours)
+            for r in name_recs:
+                if total > 0:
+                    r.overtime_hours = r.subsidy_hours
         else:
             # Type 1: Daily overtime (hours > 8 per day)
             for (emp_name, date_str), recs in by_emp_date.items():
@@ -237,6 +246,7 @@ def _calc_spain_subsidy(sheet, supplier):
                     for r in recs:
                         if day_total > 0:
                             r.subsidy_hours = round(r.hours / day_total * daily_ot, 2)
+                            r.overtime_hours = r.subsidy_hours
 
 def parse_attendance(filepath, country="spain", supplier="ALLIANCE", config=None):
     return parse_spain_attendance(filepath, supplier)
