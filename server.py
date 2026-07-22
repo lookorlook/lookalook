@@ -284,6 +284,8 @@ def api_reconcile():
                 "verdict": r["verdict"],
                 "supplement_check": r.get("supplement_check"),
                 "dimona_check": r.get("dimona_check"),
+                "overtime_hours": r.get("overtime_hours", 0),
+                "overtime_type": r.get("overtime_type"),
                 "items": r.get("items_breakdown", []),
                 "unmatched": r.get("unmatched", False),
             })

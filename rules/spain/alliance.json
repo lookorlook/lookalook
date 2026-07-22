@@ -8,7 +8,21 @@
       "label": "姓名匹配",
       "description": "考勤与发票姓名模糊匹配",
       "threshold": 0.35
+    },
+    "overtime": {
+      "enabled": true,
+      "label": "加班计算",
+      "description": "优先月超时(法定工作日×8)，否则按日超8小时",
+      "daily_threshold": 8,
+      "monthly_workdays": -1
     }
   },
-  "item_classification": {}
+  "item_classification": {
+    "overtime": [
+      "overtime",
+      "extra",
+      "加班",
+      "OT"
+    ]
+  }
 }

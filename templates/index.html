@@ -184,7 +184,7 @@ tr:hover td{background:rgba(0,212,255,0.02)}
 <div class="card">
 <div class="card-title"><span class="icon green">&#9989;</span> 核对结果</div>
 <div class="stats-grid" id="resultStats"></div>
-<div class="table-wrap"><table><thead><tr><th>员工姓名</th><th>考勤工时</th><th>发票工时</th><th>差异</th><th>判定</th><th>班次补贴</th><th>考勤补贴工时</th><th>发票补贴工时</th></tr></thead><tbody id="resultTable"></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>员工姓名</th><th>考勤工时</th><th>发票工时</th><th>加班</th><th>差异</th><th>判定</th><th>班次补贴</th><th>考勤补贴工时</th><th>发票补贴工时</th></tr></thead><tbody id="resultTable"></tbody></table></div>
 </div>
 <div class="card" id="reviewCard" style="display:none">
 <div class="card-title"><span class="icon red">&#9888;</span> 待人工复核</div>
@@ -353,7 +353,7 @@ async function runRecon(){
         invSuppH=(sc.inv_hours||0).toFixed(2)+'h';
       }
       const stCl=sc&&sc.status==='ok'?'tag-supp-ok':sc&&sc.status==='missing'?'tag-supp-missing':sc&&sc.status==='hours_mismatch'?'tag-supp-amt':'tag-supp-amt';
-      tb.innerHTML+='<tr><td>'+r.att_name+'</td><td>'+r.att_hours.toFixed(2)+'h</td><td>'+r.inv_hours.toFixed(2)+'h</td><td style="color:'+cl+'">'+ds+'h</td><td><span class="tag '+vc+'">'+vl+'</span></td><td><span class="tag-supp '+stCl+'">'+suppStatus+'</span></td><td>'+attSuppH+'</td><td>'+invSuppH+'</td></tr>';
+      tb.innerHTML+='<tr><td>'+r.att_name+'</td><td>'+r.att_hours.toFixed(2)+'h</td><td>'+r.inv_hours.toFixed(2)+'h</td><td>'+(r.overtime_hours?r.overtime_hours.toFixed(2)+'h':'-')+'</td><td style="color:'+cl+'">'+ds+'h</td><td><span class="tag '+vc+'">'+vl+'</span></td><td><span class="tag-supp '+stCl+'">'+suppStatus+'</span></td><td>'+attSuppH+'</td><td>'+invSuppH+'</td></tr>';
       if(r.verdict==='manual_review'||r.verdict==='mismatch'){
         reviewHtml+='<div style="padding:10px 14px;background:var(--bg2);border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between"><span><strong>'+r.att_name+'</strong> '+r.att_hours.toFixed(2)+'h vs '+r.inv_hours.toFixed(2)+'h</span><span class="tag '+vc+'">'+r.verdict+'</span></div>'
       }

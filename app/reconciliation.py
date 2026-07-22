@@ -167,7 +167,7 @@ def reconcile(attendance_sheet, invoices, supplier="TEMPOTEAM"):
         raw_results = apply_renotech_rules(attendance_sheet, invoice_emps_dict)
     elif supplier.upper() in ("ALLIANCE", "RANDSTAD"):
         from rules.spain_rules import apply_spain_rules
-        raw_results = apply_spain_rules(attendance_sheet, invoice_emps_dict)
+        raw_results = apply_spain_rules(attendance_sheet, invoice_emps_dict, supplier=supplier)
     else:
         from rules.tempoteam_rules import apply_tempoteam_rules
         raw_results = apply_tempoteam_rules(attendance_sheet, invoice_emps_dict)
