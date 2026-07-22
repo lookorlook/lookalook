@@ -1,0 +1,14 @@
+{
+  "country": "spain",
+  "supplier": "ALLIANCE",
+  "label": "西班牙 Alliance (清关临时工)",
+  "rules": {
+    "name_matching": {
+      "enabled": true,
+      "label": "姓名匹配",
+      "description": "考勤与发票姓名模糊匹配",
+      "threshold": 0.35
+    }
+  },
+  "item_classification": {}
+}
