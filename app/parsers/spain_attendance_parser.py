@@ -153,8 +153,8 @@ def parse_spain_attendance(filepath, supplier=None):
         sheet.add_record(AttendanceRecord(name, date_str, hours, night_hours=night_h,
                                           status="present", raw_time_slot=raw_time))
     
-    # Calculate subsidy (daily overtime for Alliance)
-    _calc_spain_subsidy(sheet, supplier)
+    # Calculate overtime for Alliance
+    _calc_spain_overtime(sheet, supplier)
     
     # Determine period
     if seen_dates:
@@ -166,87 +166,92 @@ def parse_spain_attendance(filepath, supplier=None):
     
     return sheet
 
-# Post-processing: calculate subsidy hours
-# For ALLIANCE: daily overtime (hours > 8 per day)
-# For RANDSTAD: none
-_KNOWN_DAILY_OT_SUPPLIERS = {"ALLIANCE"}
+# Post-processing: calculate overtime for ALLIANCE only
+# ALLIANCE: no subsidy_hours, no night_hours - only overtime_hours
+_KNOWN_OT_SUPPLIERS = {"ALLIANCE"}
 
-def _calc_spain_subsidy(sheet, supplier):
-    """Calculate subsidy hours for Spain parsers.
-    Priority: Monthly overtime first, then daily overtime.
-    """
+def _calc_spain_overtime(sheet, supplier):
+    """Calculate overtime hours for ALLIANCE. Clear subsidy and night for non-relevant columns."""
     from collections import defaultdict
     from datetime import date
     import calendar
     
     if supplier.upper() not in {"ALLIANCE"}:
-        # RANDSTAD: no subsidy
+        # RANDSTAD: all zero
+        for r in sheet.records:
+            r.subsidy_hours = 0.0
+            r.night_hours = 0.0
+            r.overtime_hours = 0.0
         return
     
-    # --- Monthly overtime (Type 2) ---
-    # Group all hours by employee
-    emp_total_hours = defaultdict(float)
-    emp_dates = defaultdict(set)
-    by_emp_date = defaultdict(list)
+    # For ALLIANCE: clear everything first
+    for r in sheet.records:
+        r.subsidy_hours = 0.0
+        r.night_hours = 0.0
+        r.overtime_hours = 0.0
+    
+    # Group records by employee
+    emp_records = defaultdict(list)
     for r in sheet.records:
         if r.status == "present":
             name = r.employee_name.strip()
-            emp_total_hours[name] += r.hours
-            by_emp_date[(name, r.date)].append(r)
+            emp_records[name].append(r)
+    
+    # Get year/month from first record
+    year, month = 2026, 6
+    for recs in emp_records.values():
+        for r in recs:
             try:
                 parts = r.date.split("-")
-                emp_dates[name].add((int(parts[0]), int(parts[1])))
+                year, month = int(parts[0]), int(parts[1])
+                break
             except:
-                pass
+                continue
+        break
     
-    # Calculate legal workdays x 8 for each employee's month
-    emp_monthly_ot = {}
-    for name in emp_total_hours:
-        total = emp_total_hours[name]
-        # Get the year/month from this employee's records
-        ym = list(emp_dates.get(name, {(2026, 6)}))[0]
-        year, month = ym
-        # Count weekdays in that month
-        legal_days = sum(1 for d in range(1, calendar.monthrange(year, month)[1] + 1)
-                        if date(year, month, d).weekday() < 5)
-        threshold = legal_days * 8
-        monthly_ot = total - threshold
-        emp_monthly_ot[name] = monthly_ot if monthly_ot > 0 else 0.0
+    # Calculate legal workdays x 8
+    legal_days = sum(1 for d in range(1, calendar.monthrange(year, month)[1] + 1)
+                    if date(year, month, d).weekday() < 5)
+    threshold = legal_days * 8
     
-    # --- Calculate subsidy per record ---
-    # Clear existing subsidy first
-    for r in sheet.records:
-        r.subsidy_hours = 0.0
-    
-    # Track which employees got monthly OT
-    emp_used_monthly = {}
-    
-    for name in emp_total_hours:
-        monthly_ot = emp_monthly_ot.get(name, 0)
+    for name, recs in emp_records.items():
+        total_hours = sum(r.hours for r in recs)
+        
+        # Type 2: Monthly overtime
+        monthly_ot = total_hours - threshold
         if monthly_ot > 0:
-            # Type 2: Monthly overtime - distribute proportionally
-            total = emp_total_hours[name]
-            name_recs = [r for r in sheet.records if r.employee_name.strip() == name and r.status == "present"]
-            for r in name_recs:
-                if total > 0:
-                    r.subsidy_hours = round(r.hours / total * monthly_ot, 2)
-            emp_used_monthly[name] = True
-            # Alliance overtime = the monthly OT (also set as overtim_hours)
-            for r in name_recs:
-                if total > 0:
-                    r.overtime_hours = r.subsidy_hours
-        else:
-            # Type 1: Daily overtime (hours > 8 per day)
-            for (emp_name, date_str), recs in by_emp_date.items():
-                if emp_name != name:
-                    continue
-                day_total = sum(r.hours for r in recs)
-                if day_total > 8:
-                    daily_ot = day_total - 8
-                    for r in recs:
-                        if day_total > 0:
-                            r.subsidy_hours = round(r.hours / day_total * daily_ot, 2)
-                            r.overtime_hours = r.subsidy_hours
-
+            # Assign exact overtime to ALL records proportionally
+            # but use round() for each record
+            assigned = 0.0
+            for i, r in enumerate(recs):
+                if i < len(recs) - 1:
+                    ot = round(r.hours / total_hours * monthly_ot, 2)
+                    r.overtime_hours = ot
+                    assigned += ot
+                else:
+                    # Last record gets the remainder for exact total
+                    r.overtime_hours = round(monthly_ot - assigned, 2)
+            continue
+        
+        # Type 1: Daily overtime
+        by_date = defaultdict(list)
+        for r in recs:
+            by_date[r.date].append(r)
+        
+        daily_ot_total = 0.0
+        for date_str, day_recs in by_date.items():
+            day_hours = sum(r.hours for r in day_recs)
+            if day_hours > 8:
+                daily_ot = day_hours - 8
+                # Assign proportionally across records in that day
+                assigned = 0.0
+                for i, r in enumerate(day_recs):
+                    if i < len(day_recs) - 1:
+                        ot = round(r.hours / day_hours * daily_ot, 2)
+                        r.overtime_hours = ot
+                        assigned += ot
+                    else:
+                        r.overtime_hours = round(daily_ot - assigned, 2)
+                daily_ot_total += daily_ot
 def parse_attendance(filepath, country="spain", supplier="ALLIANCE", config=None):
     return parse_spain_attendance(filepath, supplier)
