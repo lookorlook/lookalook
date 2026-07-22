@@ -269,8 +269,7 @@ async function parseAttendance(){
     let statsHtml='<div class="stat-card"><div class="stat-value blue">'+d.employee_count+'</div><div class="stat-label">员工数</div></div>'+
       '<div class="stat-card"><div class="stat-value blue">'+d.total_hours.toFixed(2)+'h</div><div class="stat-label">总工时</div></div>';
     // Three fixed subsidy columns
-    var subLbl=d.subsidy_label||'补贴工时';
-    statsHtml+='<div class="stat-card"><div class="stat-value amber">'+(d.total_subsidy_hours||0).toFixed(2)+'h</div><div class="stat-label">'+subLbl+'</div></div>'+
+    statsHtml+='<div class="stat-card"><div class="stat-value amber">'+(d.total_subsidy_hours||0).toFixed(2)+'h</div><div class="stat-label">补贴工时</div></div>'+
       '<div class="stat-card"><div class="stat-value purple">'+(d.total_night_hours||0).toFixed(2)+'h</div><div class="stat-label">夜班工时</div></div>'+
       '<div class="stat-card"><div class="stat-value orange">'+(d.total_overtime_hours||0).toFixed(2)+'h</div><div class="stat-label">加班工时</div></div>';
     statsHtml+='<div class="stat-card"><div class="stat-value blue">'+d.period_start+'</div><div class="stat-label">开始</div></div>'+

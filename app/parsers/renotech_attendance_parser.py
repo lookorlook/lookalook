@@ -91,7 +91,7 @@ def parse_renotech_attendance(filepath, config=None):
                 to = float(tout) if tout is not None else None
                 night = calculate_night_hours(ti, to) if ti is not None and to is not None else 0
                 raw = f"{tin}-{tout}" if tin else str(sval)
-                sheet.add_record(AttendanceRecord(name, dates[day_idx] if day_idx < len(dates) else "", hrs, night, raw_time_slot=raw, subsidy_hours=night))
+                sheet.add_record(AttendanceRecord(name, dates[day_idx] if day_idx < len(dates) else "", hrs, night, raw_time_slot=raw))
     sn = [s.strip() for s in wb.sheetnames]
     if sn:
         sheet.period_start = sn[0]
