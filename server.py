@@ -44,7 +44,14 @@ def load_rule(country, supplier):
 @app.route("/")
 def index():
     suppliers = get_available_suppliers()
-    return render_template("index.html", suppliers=suppliers)
+    seen = set()
+    countries = []
+    for s in suppliers:
+        c = s["country"]
+        if c not in seen:
+            seen.add(c)
+            countries.append(c)
+    return render_template("index.html", suppliers=suppliers, countries=countries)
 
 @app.route("/api/suppliers")
 def api_suppliers():

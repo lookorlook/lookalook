@@ -119,7 +119,7 @@ tr:hover td{background:rgba(0,212,255,0.02)}
 <div class="card">
 <div class="card-title"><span class="icon blue">&#9881;</span> 选择国家与供应商</div>
 <div class="form-row">
-<div class="form-group"><label>国家</label><select id="selCountry">{% for s in suppliers %}<option value="{{ s.country }}">{{ s.country|capitalize }}</option>{% endfor %}</select></div>
+<div class="form-group"><label>国家</label><select id="selCountry">{% for c in countries %}<option value="{{ c }}">{{ c|capitalize }}</option>{% endfor %}</select></div>
 <div class="form-group"><label>供应商</label><select id="selSupplier">{% for s in suppliers %}<option value="{{ s.supplier }}" data-country="{{ s.country }}">{{ s.supplier }}</option>{% endfor %}</select></div>
 </div>
 <div style="margin-top:20px;display:flex;gap:12px">
