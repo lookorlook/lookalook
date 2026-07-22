@@ -268,8 +268,10 @@ async function parseAttendance(){
     const s=document.getElementById('attStats');
     let statsHtml='<div class="stat-card"><div class="stat-value blue">'+d.employee_count+'</div><div class="stat-label">员工数</div></div>'+
       '<div class="stat-card"><div class="stat-value blue">'+d.total_hours.toFixed(2)+'h</div><div class="stat-label">总工时</div></div>';
-    if(d.total_night_hours!==undefined){
-      statsHtml+='<div class="stat-card"><div class="stat-value amber">'+d.total_night_hours.toFixed(2)+'h</div><div class="stat-label">夜班工时</div></div>';
+    // Dynamic subsidy card based on supplier rules
+    if(d.total_subsidy_hours!==undefined&&d.total_subsidy_hours>0){
+      var sl=d.subsidy_label||'补贴工时';
+      statsHtml+='<div class="stat-card"><div class="stat-value amber">'+d.total_subsidy_hours.toFixed(2)+'h</div><div class="stat-label">'+sl+'</div></div>';
     }
     statsHtml+='<div class="stat-card"><div class="stat-value blue">'+d.period_start+'</div><div class="stat-label">开始</div></div>'+
       '<div class="stat-card"><div class="stat-value blue">'+d.period_end+'</div><div class="stat-label">结束</div></div>';
@@ -330,7 +332,8 @@ async function runRecon(){
     let rsHtml='<div class="stat-card"><div class="stat-value blue">'+d.total_att.toFixed(2)+'h</div><div class="stat-label">考勤工时</div></div>'+
       '<div class="stat-card"><div class="stat-value green">'+d.total_inv.toFixed(2)+'h</div><div class="stat-label">发票工时</div></div>';
     if(d.total_night_hours!==undefined){
-      rsHtml+='<div class="stat-card"><div class="stat-value amber">'+d.total_night_hours.toFixed(2)+'h</div><div class="stat-label">夜班工时</div></div>';
+      var sl2=d.subsidy_label||'补贴工时';
+      rsHtml+='<div class="stat-card"><div class="stat-value amber">'+d.total_subsidy_hours.toFixed(2)+'h</div><div class="stat-label">'+sl2+'</div></div>';
     }
     rsHtml+='<div class="stat-card"><div class="stat-value '+(v.mismatch?'red':'green')+'">'+(v.auto_approved||0)+'</div><div class="stat-label">自动通过</div></div>'+
       '<div class="stat-card"><div class="stat-value '+(v.mismatch?'red':'green')+'">'+(v.mismatch||0)+'</div><div class="stat-label">需处理</div></div>'+
