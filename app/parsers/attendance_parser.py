@@ -8,12 +8,13 @@ from typing import List, Dict, Optional
 class AttendanceRecord:
     def __init__(self, employee_name: str, date: str, hours: float, 
                  role: str = "", status: str = "present", raw_time_slot: str = "",
-                 night_hours: float = 0.0):
+                 night_hours: float = 0.0,
+                 subsidy_hours: float = 0.0):
         self.employee_name = employee_name
         self.date = date
         self.hours = hours
         self.night_hours = night_hours
-        self.subsidy_hours = 0.0
+        self.subsidy_hours = subsidy_hours
         self.overtime_hours = 0.0
         self.role = role
         self.status = status
@@ -163,7 +164,7 @@ def parse_tempoteam_attendance(filepath: str, config: dict = None) -> Attendance
             day = date_numbers.get(col, 0)
             if day > 0:
                 date_str = f"2026-{month:02d}-{day:02d}"
-                sheet.add_record(AttendanceRecord(name, date_str, hours, role, status, raw_time_slot, night_hours=0.0))
+                sheet.add_record(AttendanceRecord(name, date_str, hours, role, status, raw_time_slot, night_hours=0.0, subsidy_hours=subsidy_h))
     
     return sheet
 
