@@ -167,25 +167,76 @@ def parse_spain_attendance(filepath, supplier=None):
 _KNOWN_DAILY_OT_SUPPLIERS = {"ALLIANCE"}
 
 def _calc_spain_subsidy(sheet, supplier):
-    """Calculate subsidy hours for Spain parsers."""
-    if supplier.upper() not in _KNOWN_DAILY_OT_SUPPLIERS:
+    """Calculate subsidy hours for Spain parsers.
+    Priority: Monthly overtime first, then daily overtime.
+    """
+    from collections import defaultdict
+    from datetime import date
+    import calendar
+    
+    if supplier.upper() not in {"ALLIANCE"}:
         # RANDSTAD: no subsidy
         return
-    # Group records by employee+date
-    from collections import defaultdict
+    
+    # --- Monthly overtime (Type 2) ---
+    # Group all hours by employee
+    emp_total_hours = defaultdict(float)
+    emp_dates = defaultdict(set)
     by_emp_date = defaultdict(list)
     for r in sheet.records:
         if r.status == "present":
-            by_emp_date[(r.employee_name.strip(), r.date)].append(r)
-    # For each day, if total > 8h, assign overtime as subsidy
-    for (emp_name, date_str), recs in by_emp_date.items():
-        day_total = sum(r.hours for r in recs)
-        if day_total > 8:
-            daily_ot = day_total - 8
-            # Split overtime proportionally across records for that day
-            for r in recs:
-                if day_total > 0:
-                    r.subsidy_hours = round(r.hours / day_total * daily_ot, 2)
+            name = r.employee_name.strip()
+            emp_total_hours[name] += r.hours
+            by_emp_date[(name, r.date)].append(r)
+            try:
+                parts = r.date.split("-")
+                emp_dates[name].add((int(parts[0]), int(parts[1])))
+            except:
+                pass
+    
+    # Calculate legal workdays x 8 for each employee's month
+    emp_monthly_ot = {}
+    for name in emp_total_hours:
+        total = emp_total_hours[name]
+        # Get the year/month from this employee's records
+        ym = list(emp_dates.get(name, {(2026, 6)}))[0]
+        year, month = ym
+        # Count weekdays in that month
+        legal_days = sum(1 for d in range(1, calendar.monthrange(year, month)[1] + 1)
+                        if date(year, month, d).weekday() < 5)
+        threshold = legal_days * 8
+        monthly_ot = total - threshold
+        emp_monthly_ot[name] = monthly_ot if monthly_ot > 0 else 0.0
+    
+    # --- Calculate subsidy per record ---
+    # Clear existing subsidy first
+    for r in sheet.records:
+        r.subsidy_hours = 0.0
+    
+    # Track which employees got monthly OT
+    emp_used_monthly = {}
+    
+    for name in emp_total_hours:
+        monthly_ot = emp_monthly_ot.get(name, 0)
+        if monthly_ot > 0:
+            # Type 2: Monthly overtime - distribute proportionally
+            total = emp_total_hours[name]
+            name_recs = [r for r in sheet.records if r.employee_name.strip() == name and r.status == "present"]
+            for r in name_recs:
+                if total > 0:
+                    r.subsidy_hours = round(r.hours / total * monthly_ot, 2)
+            emp_used_monthly[name] = True
+        else:
+            # Type 1: Daily overtime (hours > 8 per day)
+            for (emp_name, date_str), recs in by_emp_date.items():
+                if emp_name != name:
+                    continue
+                day_total = sum(r.hours for r in recs)
+                if day_total > 8:
+                    daily_ot = day_total - 8
+                    for r in recs:
+                        if day_total > 0:
+                            r.subsidy_hours = round(r.hours / day_total * daily_ot, 2)
 
 def parse_attendance(filepath, country="spain", supplier="ALLIANCE", config=None):
     return parse_spain_attendance(filepath, supplier)
