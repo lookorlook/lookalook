@@ -1,4 +1,4 @@
-"""Fallback Belgium Tempoteam Invoice Parser - uses text-based extraction."""
+﻿"""Fallback Belgium Tempoteam Invoice Parser - uses text-based extraction."""
 import sys, re
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 import pdfplumber
@@ -18,10 +18,10 @@ def parse_belgium_text(path):
     p0 = all_text[0] if all_text else ""
 
     # Extract invoice metadata from first page
-    m = re.search(r"Num[eé]ro de facture\s*(\d+)", p0)
+    m = re.search(r"(?:Num[eé]ro de facture|de la proposition)\D*(\d+)", p0, re.IGNORECASE)
     if m:
         inv.num = m.group(1)
-    m = re.search(r"Date de facture\s*(\d{2}/\d{2}/\d{4})", p0)
+    m = re.search(r"(?:Date de facture|Date de la proposition)\s*(\d{2}/\d{2}/\d{4})", p0, re.IGNORECASE)
     if m:
         inv.date = m.group(1)
     m = re.search(r"P[eé]riode\s*(\d{2}/\d{2}/\d{4})\s*[-]\s*(\d{2}/\d{2}/\d{4})", p0)
@@ -138,10 +138,10 @@ def parse_belgium_text(path):
     p0 = all_text[0] if all_text else ""
 
     # Extract invoice metadata from first page
-    m = re.search(r"Num[eé]ro de facture\s*(\d+)", p0)
+    m = re.search(r"(?:Num[eé]ro de facture|de la proposition)\D*(\d+)", p0, re.IGNORECASE)
     if m:
         inv.num = m.group(1)
-    m = re.search(r"Date de facture\s*(\d{2}/\d{2}/\d{4})", p0)
+    m = re.search(r"(?:Date de facture|Date de la proposition)\s*(\d{2}/\d{2}/\d{4})", p0, re.IGNORECASE)
     if m:
         inv.date = m.group(1)
     m = re.search(r"P[eé]riode\s*(\d{2}/\d{2}/\d{4})\s*[-]\s*(\d{2}/\d{2}/\d{4})", p0)
@@ -258,10 +258,10 @@ def parse_belgium_text(path):
     p0 = all_text[0] if all_text else ""
 
     # Extract invoice metadata from first page
-    m = re.search(r"Num[eé]ro de facture\s*(\d+)", p0)
+    m = re.search(r"(?:Num[eé]ro de facture|de la proposition)\D*(\d+)", p0, re.IGNORECASE)
     if m:
         inv.num = m.group(1)
-    m = re.search(r"Date de facture\s*(\d{2}/\d{2}/\d{4})", p0)
+    m = re.search(r"(?:Date de facture|Date de la proposition)\s*(\d{2}/\d{2}/\d{4})", p0, re.IGNORECASE)
     if m:
         inv.date = m.group(1)
     m = re.search(r"P[eé]riode\s*(\d{2}/\d{2}/\d{4})\s*[-]\s*(\d{2}/\d{2}/\d{4})", p0)

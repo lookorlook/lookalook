@@ -272,9 +272,9 @@ def _parse_pdf_chars(path):
         all_pages = [parse_page(p) for p in pdf.pages]
     if all_pages:
         p0 = " ".join(c["t"] for c in all_pages[0])
-        m = re.search(r"Numéro de facture\s*(\d+)", p0)
+        m = re.search(r"(?:Numéro de facture|de la proposition)\D*(\d+)", p0, re.IGNORECASE)
         if m: inv.num = m.group(1)
-        m = re.search(r"Date de facture\s*(\d{2}/\d{2}/\d{4})", p0)
+        m = re.search(r"(?:Date de facture|Date de la proposition)\s*(\d{2}/\d{2}/\d{4})", p0, re.IGNORECASE)
         if m: inv.date = m.group(1)
         m = re.search(r"Période\s*(\d{2}/\d{2}/\d{4})\s*[-]\s*(\d{2}/\d{2}/\d{4})", p0)
         if m: inv.p_start, inv.p_end = m.group(1), m.group(2)
