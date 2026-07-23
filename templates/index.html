@@ -183,8 +183,8 @@ tr:hover td{background:rgba(0,212,255,0.02)}
 <div class="panel" id="panel5">
 <div class="card">
 <div class="card-title"><span class="icon green">&#9989;</span> 核对结果</div>
-<div class="stats-grid" id="resultStats"></div>
-<div class="table-wrap"><table><thead><tr><th>员工姓名</th><th>考勤工时</th><th>发票工时</th><th>加班</th><th>差异</th><th>判定</th><th>班次补贴</th><th>考勤补贴工时</th><th>发票补贴工时</th></tr></thead><tbody id="resultTable"></tbody></table></div>
+<div class="stats-grid" id="resultStats"></div><div style="margin-bottom:16px;display:flex;gap:10px;align-items:center"><button class="btn btn-accent" onclick="exportAllResults()">&#128229; 导出核对结果</button><span style="font-size:13px;color:var(--text2)">含全部数据和待复核明细</span></div>
+<div class="table-wrap"><table><thead><tr><th>员工姓名</th><th>考勤工时</th><th>发票工时</th><th>差异</th><th>判定</th><th>考勤补贴工时</th><th>发票补贴工时</th><th>考勤夜班工时</th><th>发票夜班工时</th><th>考勤加班工时</th><th>发票加班工时</th></tr></thead><tbody id="resultTable"></tbody></table></div>
 </div>
 <div class="card" id="reviewCard" style="display:none">
 <div class="card-title"><span class="icon red">&#9888;</span> 待人工复核</div>
@@ -309,7 +309,25 @@ async function parseInvoices(){
     const d=await r.json();
     if(d.error){toast(d.error,'error');return}
     state.invoices=d;
-    goStep(4);toast(Object.keys(d).length+' 份发票已解析','success');
+    goStep(4);if(Object.keys(d).length===0 && d._diagnostic){
+          const diag=d._diagnostic;
+          let msg='发票解析失败: 0份发票';
+          for(let k in diag){
+            if(k.startsWith('pdf_')){
+              const pages=diag[k];
+              if(pages && pages.length>0){
+                msg+=' | 第'+(parseInt(k.split('_')[1])+1)+'个PDF: '+pages.length+'页';
+                if(pages[0].text_len===0) msg+=', 无可提取文字(可能是扫描件)';
+                else msg+=', 首页文字长度:'+pages[0].text_len;
+              }
+            }
+          }
+          toast(msg,'error');
+        }else{
+          toast(Object.keys(d).length+' 份发票已解析','success');
+        }
+        // Show diagnostic details in console
+        if(d._diagnostic) console.log('PDF Diagnostic:', d._diagnostic);
     const p=document.getElementById('reconPreview');
     const att=state.attendance;
     const invCount=Object.keys(d).length;
@@ -360,7 +378,7 @@ async function runRecon(){
         invSuppH=(sc.inv_hours||0).toFixed(2)+'h';
       }
       const stCl=sc&&sc.status==='ok'?'tag-supp-ok':sc&&sc.status==='missing'?'tag-supp-missing':sc&&sc.status==='hours_mismatch'?'tag-supp-amt':'tag-supp-amt';
-      tb.innerHTML+='<tr><td>'+r.att_name+'</td><td>'+r.att_hours.toFixed(2)+'h</td><td>'+r.inv_hours.toFixed(2)+'h</td><td>'+(r.overtime_hours?r.overtime_hours.toFixed(2)+'h':'-')+'</td><td style="color:'+cl+'">'+ds+'h</td><td><span class="tag '+vc+'">'+vl+'</span></td><td><span class="tag-supp '+stCl+'">'+suppStatus+'</span></td><td>'+attSuppH+'</td><td>'+invSuppH+'</td></tr>';
+      tb.innerHTML+='<tr><td>'+r.att_name+'</td><td>'+r.att_hours.toFixed(2)+'h</td><td>'+r.inv_hours.toFixed(2)+'h</td><td style="color:'+cl+'">'+ds+'h</td><td><span class="tag '+vc+'">'+vl+'</span></td><td>'+(r.att_subsidy_hours!=null?(r.att_subsidy_hours).toFixed(2)+'h':'无')+'</td><td>'+(r.inv_subsidy_hours!=null?(r.inv_subsidy_hours).toFixed(2)+'h':'无')+'</td><td>'+(r.att_night_hours!=null?(r.att_night_hours).toFixed(2)+'h':'无')+'</td><td>'+(r.inv_night_hours!=null?(r.inv_night_hours).toFixed(2)+'h':'无')+'</td><td>'+(r.overtime_hours!=null?(r.overtime_hours).toFixed(2)+'h':'无')+'</td><td>'+(r.inv_overtime_hours!=null?(r.inv_overtime_hours).toFixed(2)+'h':'无')+'</td></tr>';
       if(r.verdict==='manual_review'||r.verdict==='mismatch'){
         reviewHtml+='<div style="padding:10px 14px;background:var(--bg2);border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between"><span><strong>'+r.att_name+'</strong> '+r.att_hours.toFixed(2)+'h vs '+r.inv_hours.toFixed(2)+'h</span><span class="tag '+vc+'">'+r.verdict+'</span></div>'
       }
@@ -453,6 +471,21 @@ function exportReviewXlsx(){
     })
   })
   .catch(e=>toast('导出失败: '+e.message,'error'));
+}
+
+
+async function exportAllResults(){
+  try{
+    const r=await fetch('/api/export-review',{method:'POST'});
+    if(!r.ok){const d=await r.json();toast(d.error||'导出失败','error');return}
+    const blob=await r.blob();
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='核对结果.xlsx';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('导出成功','success');
+  }catch(e){toast('导出失败: '+e.message,'error')}
 }
 
 function toast(msg,type){

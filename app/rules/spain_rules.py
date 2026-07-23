@@ -1,4 +1,4 @@
-"""Spain (Alliance / Randstad) reconciliation rules."""
+﻿"""Spain (Alliance / Randstad) reconciliation rules."""
 from datetime import date, timedelta
 
 def calc_legal_workdays(year, month):
@@ -59,6 +59,15 @@ def calc_overtime_alliance(attendance_sheet, emp_name):
     
     return (0.0, None)
 
+def calc_inv_overtime_hours(inv_items):
+    """Calculate invoice overtime hours from items like Horas Extras and Horas Ex Normal."""
+    total = 0.0
+    for item in inv_items:
+        name = item.name.lower()
+        if "extra" in name or "ex normal" in name or "ex.normal" in name:
+            total += item.qty
+    return round(total, 2)
+
 def apply_spain_rules(attendance_sheet, invoice_emps_dict, supplier=None):
     """
     Spain reconciliation rules.
@@ -79,6 +88,9 @@ def apply_spain_rules(attendance_sheet, invoice_emps_dict, supplier=None):
         overtime_type = None
         if supplier and supplier.upper() == "ALLIANCE":
             overtime_hours, overtime_type = calc_overtime_alliance(attendance_sheet, att_name)
+        
+        # Invoice overtime hours from items
+        inv_overtime_hours = calc_inv_overtime_hours(inv_items)
 
         if abs(diff) <= 0.5:
             verdict = "auto_approved"
@@ -92,12 +104,12 @@ def apply_spain_rules(attendance_sheet, invoice_emps_dict, supplier=None):
         results.append({
             "name": can_name, "att_name": att_name,
             "att_hours": att_hours, "att_days": len(att_records),
-            "att_night_hours": round(att_night, 2),
             "inv_hours": inv_hours, "inv_amount": inv_data.get("amount", 0),
             "diff_hours": round(diff, 2),
             "diff_percent": round(abs(diff) / max(att_hours, 0.01) * 100, 1),
             "verdict": verdict,
             "overtime_hours": round(overtime_hours, 2),
+            "inv_overtime_hours": inv_overtime_hours,
             "overtime_type": overtime_type,
             "items_breakdown": ["%s: %.2fh x %.2f = %.2f" % (i.name, i.qty, i.rate, i.amt) for i in inv_items],
             "supplement_check": None, "dimona_check": None,

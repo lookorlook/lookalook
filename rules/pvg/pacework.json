@@ -1,0 +1,23 @@
+{
+  "country": "pvg",
+  "supplier": "PACEWORK",
+  "label": "PVG - Pacework",
+  "rules": {
+    "attendance": {
+      "type": "weekly_excel",
+      "date_column": "header",
+      "name_column": "A",
+      "time_format": "HH:MM:SS"
+    },
+    "invoice": {
+      "type": "aggregated",
+      "has_employee_detail": false
+    },
+    "reconciliation": {
+      "type": "total_hours",
+      "threshold": 0.5
+    },
+    "overtime": false,
+    "night_shift": true
+  }
+}

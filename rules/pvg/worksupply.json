@@ -1,0 +1,23 @@
+{
+  "country": "pvg",
+  "supplier": "WORKSUPPLY",
+  "label": "PVG - Work Supply",
+  "rules": {
+    "attendance": {
+      "type": "weekly_excel",
+      "date_column": "header",
+      "name_column": "A",
+      "time_format": "HH:MM:SS"
+    },
+    "invoice": {
+      "type": "per_employee",
+      "has_employee_detail": true
+    },
+    "reconciliation": {
+      "type": "employee_match",
+      "threshold": 0.35
+    },
+    "overtime": true,
+    "night_shift": true
+  }
+}

@@ -95,7 +95,7 @@ def parse_spain_attendance(filepath, supplier=None):
         name = ws.cell(r, 1).value
         if not name or not str(name).strip():
             continue
-        name = str(name).strip()
+        name = str(name).strip().upper()
         
         sup_val = ws.cell(r, 2).value
         if sup_val:

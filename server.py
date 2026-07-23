@@ -7,6 +7,7 @@ from parsers.attendance_parser import parse_attendance
 from parsers.invoice_parser import parse_invoices
 from reconciliation import reconcile, _score_name
 import io, base64
+import pdfplumber, traceback
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -185,12 +186,67 @@ def api_parse_invoices():
         for p in tmp_paths:
             try: os.unlink(p)
             except: pass
+        # Add diagnostic when 0 invoices parsed
+        if not result:
+            diag = {"files_uploaded": len(inv_paths), "result_count": 0}
+            for pi, pf in enumerate(inv_paths):
+                try:
+                    with pdfplumber.open(pf) as pdf:
+                        pg_info = []
+                        for pp in pdf.pages:
+                            text = pp.extract_text() or ""
+                            pg_info.append({
+                                "page": pp.page_number,
+                                "chars": len(pp.chars),
+                                "text_len": len(text),
+                                "preview": text[:300]
+                            })
+                        diag[f"pdf_{pi}"] = pg_info
+                except Exception as pe:
+                    diag[f"pdf_{pi}_err"] = str(pe)
+            result["_diagnostic"] = diag
         return jsonify(result)
     except Exception as e:
         for p in tmp_paths:
             try: os.unlink(p)
             except: pass
         return jsonify({"error": str(e)}), 500
+
+@app.route("/api/diagnose-pdf", methods=["POST"])
+def api_diagnose_pdf():
+    """Debug endpoint: show what text/pdfplumber can extract from a PDF."""
+    if "file" not in request.files:
+        return jsonify({"error": "No file"}), 400
+    f = request.files["file"]
+    import tempfile, pdfplumber, traceback
+    tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+    try:
+        f.save(tmp.name)
+        tmp.close()
+        result = {"filename": f.filename, "size": os.path.getsize(tmp.name)}
+        with pdfplumber.open(tmp.name) as pdf:
+            result["pages"] = len(pdf.pages)
+            page_info = []
+            for pi, page in enumerate(pdf.pages):
+                info = {"page": pi + 1}
+                info["chars"] = len(page.chars)
+                text = page.extract_text() or ""
+                info["text_length"] = len(text)
+                info["text_preview"] = text[:500]
+                # Show first few chars with positions
+                char_samples = []
+                for c in page.chars[:20]:
+                    char_samples.append({"char": c["text"], "x0": round(c["x0"], 1), "top": round(c["top"], 1)})
+                info["char_samples"] = char_samples
+                page_info.append(info)
+            result["pages_detail"] = page_info
+        os.unlink(tmp.name)
+        return jsonify(result)
+    except Exception as e:
+        try: os.unlink(tmp.name)
+        except: pass
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+
 
 @app.route("/api/reconcile", methods=["POST"])
 def api_reconcile():
@@ -217,49 +273,26 @@ def api_reconcile():
     if not rule:
         rule = {"rules": {"name_matching": {"threshold": 0.35}}}
 
-    # Re-parse for actual reconcile
-    import tempfile
-    import openpyxl
-    tmp_xlsx = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
-    try:
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Juin 2026"
-        ws.cell(2, 2).value = att_data["period_start"]
-        ws.cell(2, 8).value = att_data["period_end"]
-        seen_emps = {}
-        emp_row = 3
-        for rec in att_data["records"]:
-            name = rec["name"]
-            if name not in seen_emps:
-                seen_emps[name] = emp_row
-                ws.cell(emp_row, 1).value = name
-                emp_row += 1
-        from datetime import datetime
-        day_map = {}
-        for rec in att_data["records"]:
-            d = int(rec["date"].split("-")[2])
-            if d in day_map: continue
-            dt = datetime.strptime(rec["date"], "%Y-%m-%d")
-            col = dt.weekday() + 2  # Mon=0->2, Tue=1->3, ..., Sun=6->8
-            day_map[d] = col
-            ws.cell(2, col).value = d  # Set date number in header row
-        for rec in att_data["records"]:
-            name = rec["name"]
-            row = seen_emps.get(name)
-            if not row: continue
-            d = int(rec["date"].split("-")[2])
-            col = day_map.get(d)
-            if col and rec["raw_time"]:
-                ws.cell(row, col).value = rec["raw_time"]
-        wb.save(tmp_xlsx)
-        att = parse_attendance(tmp_xlsx.name, country=country, supplier=supplier)
-        tmp_xlsx.close()  # Release handle on Windows
-        os.unlink(tmp_xlsx.name)
-    except Exception as e:
-        try: tmp_xlsx.close(); os.unlink(tmp_xlsx.name)
-        except: pass
-        return jsonify({"error": "Failed to rebuild attendance: " + str(e)}), 500
+    # Build AttendanceSheet directly from stored JSON data
+    from parsers.attendance_parser import AttendanceSheet as AttSheet, AttendanceRecord as AttRec
+    att = AttSheet(period_start=att_data.get("period_start", ""), period_end=att_data.get("period_end", ""))
+    for rec in att_data.get("records", []):
+        ar = AttRec(
+            employee_name=rec.get("name", ""),
+            date=rec.get("date", ""),
+            hours=rec.get("hours", 0),
+            night_hours=rec.get("night_hours", 0),
+            subsidy_hours=rec.get("subsidy_hours", 0),
+            role=rec.get("role", ""),
+            status=rec.get("status", "present"),
+            raw_time_slot=rec.get("raw_time", "")
+        )
+        ar.overtime_hours = rec.get("overtime_hours", 0)
+        att.add_record(ar)
+    # Run overtime calculation for Alliance
+    if supplier.upper() == "ALLIANCE":
+        from parsers.spain_attendance_parser import _calc_spain_overtime
+        _calc_spain_overtime(att, supplier)
 
     # Use already-parsed invoice data directly (skip re-parsing)
     from parsers.invoice_parser import Invoice, EmpDetail, InvItem
@@ -296,16 +329,21 @@ def api_reconcile():
         for r in report.results:
             results.append({
                 "name": r["name"], "att_name": r["att_name"],
-                "att_hours": r["att_hours"], "att_night_hours": r.get("att_night_hours", 0), "att_days": r.get("att_days", 0),
+                "att_hours": r["att_hours"], "att_days": r.get("att_days", 0),
                 "inv_hours": r["inv_hours"], "inv_amount": r["inv_amount"],
                 "diff_hours": r["diff_hours"], "diff_percent": r["diff_percent"],
                 "verdict": r["verdict"],
                 "supplement_check": r.get("supplement_check"),
                 "dimona_check": r.get("dimona_check"),
-                "overtime_hours": r.get("overtime_hours", 0),
                 "overtime_type": r.get("overtime_type"),
                 "items": r.get("items_breakdown", []),
                 "unmatched": r.get("unmatched", False),
+                "att_subsidy_hours": r.get("att_subsidy_hours") if "att_subsidy_hours" in r else None,
+                "inv_subsidy_hours": r.get("inv_subsidy_hours") if "inv_subsidy_hours" in r else None,
+                "att_night_hours": r.get("att_night_hours") if "att_night_hours" in r else None,
+                "inv_night_hours": r.get("inv_night_hours") if "inv_night_hours" in r else None,
+                "overtime_hours": r.get("overtime_hours") if "overtime_hours" in r else None,
+                "inv_overtime_hours": r.get("inv_overtime_hours") if "inv_overtime_hours" in r else None,
             })
         summary = {
             "period": report.period, "supplier": report.supplier,
@@ -331,108 +369,114 @@ def api_reconcile():
 
 @app.route("/api/export-review", methods=["POST"])
 def api_export_review():
-    """Export manual review data as XLSX."""
+    """Export ALL reconciliation results + manual review items as XLSX."""
     import openpyxl
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-    
+
     sid = session.get("session_id")
     if not sid:
         return jsonify({"error": "No session data"}), 400
-    
+
     res_path = os.path.join(UPLOAD_FOLDER, sid + "_results.json")
     if not os.path.exists(res_path):
         return jsonify({"error": "No results. Run reconciliation first."}), 400
-    
+
     with open(res_path, "r", encoding="utf-8") as _f:
         summary = json.load(_f)
-    
-    review_items = [r for r in summary.get("results", [])
+
+    all_items = summary.get("results", [])
+    review_items = [r for r in all_items
                     if r.get("verdict") in ("manual_review", "mismatch")]
-    
+
     wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "人工复核"
-    
-    header_font = Font(bold=True, color="FFFFFF", size=11)
-    header_fill = PatternFill(start_color="1A1F35", end_color="1A1F35", fill_type="solid")
-    thin_border = Border(
+
+    hf = Font(bold=True, color="FFFFFF", size=11)
+    hfill = PatternFill(start_color="1A1F35", end_color="1A1F35", fill_type="solid")
+    tb = Border(
         left=Side(style="thin", color="2A3050"),
         right=Side(style="thin", color="2A3050"),
         top=Side(style="thin", color="2A3050"),
         bottom=Side(style="thin", color="2A3050"),
     )
-    headers = ["员工姓名", "考勤工时", "发票工时", "差异", "判定", "班次补贴", "补贴工时(考勤)", "补贴工时(发票)", "社保Dimona", "发票明细"]
-    for col, h in enumerate(headers, 1):
-        cell = ws.cell(1, col, h)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = Alignment(horizontal="center")
-        cell.border = thin_border
-    
-    for i, item in enumerate(review_items, 2):
-        supp = item.get("supplement_check") or {}
-        dimona = item.get("dimona_check") or {}
-        
-        supp_map = {"ok": "正常", "missing": "缺失", "amount_mismatch": "金额不符", "unexpected": "异常"}
-        dimona_map = {"ok": "正常", "qty_mismatch": "数量不符"}
-        verdict_map = {"auto_approved": "自动通过", "match": "一致", "minor_diff": "轻微差异", "manual_review": "查看数据", "mismatch": "异常"}
-        
-        supp_status = supp_map.get(supp.get("status"), supp.get("status", ""))
-        dimona_status = dimona_map.get(dimona.get("status"), dimona.get("status", ""))
-        verdict_label = verdict_map.get(item.get("verdict", ""), item.get("verdict", ""))
-        
-        supp_extra = ""
-        if supp.get("status") and supp["status"] not in ("ok", None):
-            supp_extra = " (考勤=%.2fh, 发票=%.2fh)" % (supp.get("att_hours", 0), supp.get("inv_hours", 0))
-        dimona_extra = ""
-        if dimona.get("status") and dimona["status"] != "ok":
-            dimona_extra = " (发票qty=%s, 预期qty=%s)" % (dimona.get("inv_qty", "?"), dimona.get("expected_qty", "?"))
-        
-        items_str = "; ".join(item.get("items", []))
-        
-        ws.cell(i, 1, item.get("att_name", ""))
-        ws.cell(i, 2, item.get("att_hours", 0))
-        ws.cell(i, 3, item.get("inv_hours", 0))
-        ws.cell(i, 4, round(item.get("diff_hours", 0), 2))
-        ws.cell(i, 5, verdict_label)
-        ws.cell(i, 6, supp_status + supp_extra)
-        ws.cell(i, 7, supp.get("att_hours", "-"))
-        ws.cell(i, 8, supp.get("inv_hours", "-"))
-        ws.cell(i, 9, dimona_status + dimona_extra)
-        ws.cell(i, 10, items_str)
-        
-        for col in range(1, 11):
-            cell = ws.cell(i, col)
-            cell.border = thin_border
-            cell.alignment = Alignment(wrapText=True)
-    
-    ws.column_dimensions["A"].width = 30
-    ws.column_dimensions["B"].width = 12
-    ws.column_dimensions["C"].width = 12
-    ws.column_dimensions["D"].width = 10
-    ws.column_dimensions["E"].width = 12
-    ws.column_dimensions["F"].width = 35
-    ws.column_dimensions["G"].width = 18
-    ws.column_dimensions["H"].width = 18
-    ws.column_dimensions["I"].width = 35
-    ws.column_dimensions["J"].width = 50
-    
+    vm = {"auto_approved": "自动通过", "match": "一致", "minor_diff": "轻微差异",
+          "manual_review": "待审核", "mismatch": "异常"}
+    sm = {"ok": "正常", "missing": "缺失", "amount_mismatch": "金额不符", "unexpected": "异常",
+          "hours_mismatch": "工时不符", "qty_mismatch": "数量不符"}
+
+    def fill_sheet(ws, title, items):
+        ws.title = title
+        headers = ["序号", "员工姓名", "考勤工时", "发票工时", "差异", "判定",
+                   "班次补贴", "补贴工时(考勤)", "补贴工时(发票)", "Dimona", "发票明细"]
+        for col, h in enumerate(headers, 1):
+            cell = ws.cell(1, col, h)
+            cell.font = hf
+            cell.fill = hfill
+            cell.alignment = Alignment(horizontal="center")
+            cell.border = tb
+
+        for i, item in enumerate(items, 2):
+            supp = item.get("supplement_check") or {}
+            dimona = item.get("dimona_check") or {}
+            verdict_label = vm.get(item.get("verdict", ""), item.get("verdict", ""))
+            supp_status = sm.get(supp.get("status"), supp.get("status", ""))
+            dimona_status = sm.get(dimona.get("status"), dimona.get("status", ""))
+
+            supp_extra = ""
+            if supp.get("status") and supp["status"] not in ("ok", None):
+                supp_extra = " (考勤=%.2fh, 发票=%.2fh)" % (supp.get("att_hours", 0), supp.get("inv_hours", 0))
+            dimona_extra = ""
+            if dimona.get("status") and dimona["status"] != "ok":
+                dimona_extra = " (发票qty=%s, 预期qty=%s)" % (dimona.get("inv_qty", "?"), dimona.get("expected_qty", "?"))
+
+            items_str = "; ".join(item.get("items_breakdown", []))
+
+            vals = [i - 1, item.get("att_name", ""),
+                    item.get("att_hours", 0), item.get("inv_hours", 0),
+                    round(item.get("diff_hours", 0), 2), verdict_label,
+                    supp_status + supp_extra,
+                    supp.get("att_hours", "-"), supp.get("inv_hours", "-"),
+                    dimona_status + dimona_extra, items_str]
+            for col, v in enumerate(vals, 1):
+                cell = ws.cell(i, col, v)
+                cell.border = tb
+                cell.alignment = Alignment(wrapText=True)
+
+        ws.column_dimensions["A"].width = 6
+        ws.column_dimensions["B"].width = 30
+        ws.column_dimensions["C"].width = 12
+        ws.column_dimensions["D"].width = 12
+        ws.column_dimensions["E"].width = 10
+        ws.column_dimensions["F"].width = 12
+        ws.column_dimensions["G"].width = 35
+        ws.column_dimensions["H"].width = 18
+        ws.column_dimensions["I"].width = 18
+        ws.column_dimensions["J"].width = 35
+        ws.column_dimensions["K"].width = 50
+
+    # Sheet 1: All results
+    ws1 = wb.active
+    fill_sheet(ws1, "核对结果", all_items)
+
+    # Sheet 2: Manual review items
+    if review_items:
+        ws2 = wb.create_sheet()
+        fill_sheet(ws2, "待复核", review_items)
+
     import tempfile
     tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
     wb.save(tmp.name)
     tmp.close()
-    
+
     with open(tmp.name, "rb") as _f:
         data = _f.read()
     os.unlink(tmp.name)
-    
+
     return send_file(
         io.BytesIO(data),
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         as_attachment=True,
-        download_name="人工复核数据.xlsx",
+        download_name="核对结果.xlsx",
     )
-
 
 @app.route("/api/export-attendance", methods=["POST"])
 def api_export_attendance():
