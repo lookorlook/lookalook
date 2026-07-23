@@ -1,4 +1,4 @@
-"""
+﻿"""
 TEMPOTEAM (Belgium) specific reconciliation rules.
 """
 import re
@@ -111,6 +111,10 @@ def apply_tempoteam_rules(attendance_sheet, invoice_emps_dict):
             "items_breakdown": ["%s: %.2fh x %.2f = %.2f" % (i.name, i.qty, i.rate, i.amt) for i in inv_items],
             "supplement_check": supp_check, "dimona_check": dimona_check,
             "unmatched": inv_data.get("_unmatched", False),
+            "att_subsidy_hours": round(supp_check["att_hours"], 2) if supp_check else 0,
+            "inv_subsidy_hours": round(supp_check["inv_hours"], 2) if supp_check else 0,
+            "att_night_hours": 0, "inv_night_hours": 0,
+            "overtime_hours": 0, "inv_overtime_hours": 0,
         })
 
     return results
